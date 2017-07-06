@@ -13,7 +13,7 @@ from programmer import *
 
 ROOT_PATH = os.getcwd()
 
-Ui_MainWindow, QMainWindow = loadUiType(os.path.join(ROOT_PATH, 'signal_controller.ui'))
+Ui_MainWindow, QMainWindow = loadUiType(os.path.join(ROOT_PATH, 'cycle_control.ui'))
 
 class Main(QMainWindow, Ui_MainWindow):
     def __init__(self):

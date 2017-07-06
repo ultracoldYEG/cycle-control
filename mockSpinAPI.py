@@ -59,7 +59,6 @@ class MockSpinAPI(object):
         print('Pulse plaster programming stopped')
 
     def pb_inst_pbonly(self, args):
-        print('new instruction with ', args)
         self.instructions.append(args)
         return self.instructions[-1]
 
@@ -118,11 +117,6 @@ def pb_select_board(board_number):
     return spinapi.pb_select_board(board_number)
 
 
-# def pb_set_defaults():
-#     """Set board defaults. Must be called before using any other board functions."""
-#     return spinapi.pb_set_defaults()
-
-
 def pb_core_clock(clock):
     return spinapi.pb_core_clock(clock)
 
@@ -148,11 +142,6 @@ def pb_start():
 
 def pb_stop():
     return spinapi.pb_stop()
-
-
-# def pb_reset():
-    # return spinapi.pb_reset()
-
 
 def pb_close():
     return spinapi.pb_close()

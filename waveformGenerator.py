@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import re
 
 FUNCTION_REGEX = r'^(\w+)\((.*)\)$'
+ANALOG_PIN = 2
+NOVATECH_PIN = 3
+PULSE_WIDTH = 5e-6
 
 class WaveformGenerator(object):
     def __init__(self, cycle_data):
@@ -44,73 +47,57 @@ class WaveformGenerator(object):
         iter_pins = iter([inst.digital_pins for inst in self.instructions])
         iter_domains = [iter(domain), iter(self.cycle_data.analog_domain), iter(self.cycle_data.novatech_domain)]
         next = [x.next() for x in iter_domains]
-        smallest = min(next)
-
-        analog_pin = 2
-        novatech_pin = 3
 
         while True:
-            index = next.index(smallest)
+            index = next.index(min(next))
 
             if index == 0:
-                self.pulse_pins(smallest, iter_pins.next(), analog_pin, novatech_pin)
+                self.pulse_pins(min(next), iter_pins.next(), ANALOG_PIN, NOVATECH_PIN)
                 next = [x.next() for x in iter_domains]
             elif index == 1:
-                self.pulse_pins(smallest, self.cycle_data.digital_data[-1], analog_pin)
+                self.pulse_pins(min(next), self.cycle_data.digital_data[-1], ANALOG_PIN)
                 next[1] = iter_domains[1].next()
-            else:
-                self.pulse_pins(smallest, self.cycle_data.digital_data[-1], novatech_pin)
+            elif index == 2:
+                self.pulse_pins(min(next), self.cycle_data.digital_data[-1], NOVATECH_PIN)
                 next[2] = iter_domains[2].next()
-            smallest = min(next)
-            if smallest == domain[-1]:
-                self.cycle_data.digital_domain.append(smallest)
+
+            if min(next) == domain[-1]:
+                self.cycle_data.digital_domain.append(min(next))
                 self.cycle_data.digital_data.append(self.cycle_data.digital_data[-1])
                 break
 
 
     def pulse_pins(self, domain, pin_flag, *pins):
-        for i in pins:
-            pin_flag = self.change_digital_pin(pin_flag, i, '1')
+        for pin in pins:
+            pin_flag = self.change_digital_pin(pin_flag, pin, '1')
 
         self.cycle_data.digital_domain.append(domain)
         self.cycle_data.digital_data.append(pin_flag)
 
-        for i in pins:
-            pin_flag = self.change_digital_pin(pin_flag, i, '0')
+        for pin in pins:
+            pin_flag = self.change_digital_pin(pin_flag, pin, '0')
 
-        self.cycle_data.digital_domain.append(domain + 5 * 10**-6)
+        self.cycle_data.digital_domain.append(domain + PULSE_WIDTH)
         self.cycle_data.digital_data.append(pin_flag)
 
-    def change_digital_pin(self,binary_string, pin_num, new_string):
-        return binary_string[:pin_num] + new_string + binary_string[pin_num + 1:]
+    def change_digital_pin(self,binary_string, pin, repl):
+        return binary_string[:pin] + repl + binary_string[pin + 1:]
 
     def generate_single_waveform(self, inst, func_strings):
         funcs = []
-        all_constant = True
         for func_string in func_strings:
-            result = re.match(FUNCTION_REGEX, func_string)
-            if result:
-                key = result.group(1)
-                args = [float(x) for x in result.group(2).split(',')]
-            else:
-                try:
-                    key = 'const'
-                    args = [float(func_string)]
-                except ValueError:
-                    print('not a valid function: ', func_string)
-                    return
+            key, args = self.parse_function_string(func_string)
 
             if key == 'const':
                 funcs.append((constFunc, args))
             elif key == 'ramp':
                 funcs.append((linFunc, args))
-                all_constant = False
             elif key == 'sin':
                funcs.append((sinFunc, args))
-               all_constant = False
             elif key == 'exp':
                 funcs.append((expFunc, args))
-                all_constant = False
+            else:
+                return
 
         duration = inst.duration
         stepsize = inst.stepsize
@@ -119,16 +106,29 @@ class WaveformGenerator(object):
             stepsize = duration
 
         steps = np.ceil(duration / stepsize)
-        
         domain = np.linspace(0.0, duration, steps, False)
-        
-        if all_constant:
+
+        if all((func == constFunc for func, args in funcs)):
             domain = np.array([domain[0]])
             
         if self.instructions[-1] == inst:
             domain = np.append(domain, duration)
             
         return domain, [list(func(domain, duration, *args)) for func, args in funcs]
+
+    def parse_function_string(self,string):
+        result = re.match(FUNCTION_REGEX, string)
+        if result:
+            key = result.group(1)
+            args = [float(x) for x in result.group(2).split(',')]
+        else:
+            try:
+                key = 'const'
+                args = [float(string)]
+            except ValueError:
+                print('not a valid function: ', string)
+                return None, None
+        return key, args
 
 
     def plot_waveforms(self):
