@@ -1,12 +1,13 @@
 #from spinapi import *
 #from PyDAQmx import *
 
-from instruction import *
-from waveformGenerator import *
-from mockSpinAPI import *
-from mockPyDAQmx import *
+from cycle import *
+from cycle_plotter import *
+from mock_spinapi import *
+from mock_PyDAQmx import *
+import numpy as np
+import serial
 import threading
-
 
 class Programmer(object):
     def __init__(self):
@@ -36,26 +37,24 @@ class Programmer(object):
             print('Put in more instructions')
             return
 
-        cycle_data = InstructionCycle(instructions)
+        self.cycle = Cycle(instructions)
+        self.cycle.create_waveforms()
 
-        wavegen = WaveformGenerator(cycle_data)
-        wavegen.generate_all_waveforms()
-        wavegen.plot_waveforms()
+        plotter = CyclePlotter(self.cycle)
+        plotter.plot_digital_channels(0, 1, 2)
+        plotter.plot_analog_channels(0,1,2)
 
-        self.program_pulse_blaster(cycle_data)
-        self.program_NI(cycle_data)
-        self.program_novatech(cycle_data)
 
-    def program_pulse_blaster(self, cycle_data):
-        domain = cycle_data.digital_domain
-        data = cycle_data.digital_data
+        self.program_pulse_blaster()
+        self.program_NI()
+        self.program_novatech()
 
-        # the first pulse blaster instruction is assigned to a variable so the last instruction
-        # can reference this and return to the start.
-        # pb_inst_pbonly(pin flags, next instruction, instruction flag (if needed), duration)
+    def program_pulse_blaster(self):
+        domain = self.cycle.digital_domain
+        data = self.cycle.digital_data
+
         pb_start_programming(PULSE_PROGRAM)
         start = pb_inst_pbonly(int(data[0], 2), Inst.CONTINUE, None, (domain[1] - domain[0]) * s)
-
         for i in range(1, len(domain)-2):
             pin_flag = int(data[i], 2)
             stepsize = (domain[i+1] - domain[i]) * s
@@ -64,8 +63,8 @@ class Programmer(object):
         pb_inst_pbonly(int(data[-2], 2), Inst.BRANCH, start, (domain[-1] - domain[-2]) * s)
         pb_stop_programming()
 
-    def program_NI(self, cycle_data):
-        analog_data_grouped_by_channel = [x for channel in cycle_data.analog_data for x in channel[:-1]]
+    def program_NI(self):
+        analog_data_grouped_by_channel = [x for channel in self.cycle.analog_data for x in channel[:-1]]
 
         analog_data = np.array(analog_data_grouped_by_channel, dtype=np.float64)
         num_samples = int(len(analog_data) / 2)
@@ -84,19 +83,27 @@ class Programmer(object):
 
         DAQmxWriteAnalogF64(self.taskHandle, num_samples, 0, 10.0, DAQmx_Val_GroupByChannel, analog_data, None, None)
 
-    def program_novatech(self, cycle_data):
-        # example novatech programming
-        # nova_device = serial.Serial('COM3', baudrate=19200, timeout=20.0)
-        # nova_device.write('M 0\n'.encode('utf-8'))  # setting mode to single tone
-        # nova_device.write('F0 5.0000000\n'.encode('utf-8'))  # setting frequency to a static 2MHz
-        # nova_device.write('V0 20\n'.encode('utf-8'))  # setting amplitude to a fraction 20/1023 of it's maximum output
-        # nova_device.close()
-        return
+    def program_novatech(self):
+        nova_data = self.cycle.novatech_data
+        with serial.Serial('COM1', baudrate=19200, timeout=20.0) as nova_device:
+            nova_device.write('M 0\n'.encode('utf-8'))  # setting mode to table enter mode
+            for sample in range(len(nova_data[0])):
+                for channel in range(len(nova_data)/3):
+
+                    addr = np.base_repr(int(sample), 16).zfill(4)
+                    amp = np.base_repr(int(nova_data[3 * channel + 0][sample]), 16).zfill(4)
+                    freq = np.base_repr(int(nova_data[3 * channel + 1][sample] * 1e6 / 0.1), 16).zfill(8)
+                    phase = np.base_repr(int(nova_data[3 * channel + 2][sample]), 16).zfill(4)
+
+                    print 't{0:1.1} {1:4.4} {2:8.8},{3:4.4},{4:4.4},{5:2.2}'.format(str(channel), addr,  freq, phase, amp, '00')
+
+                    #tn 3fff aabbccdd,eeff,gghh,ii
+                    #channel , address, freq, phase, amp, dwell
+                    #TODO proper dwell time setting for external triggering?
 
     def start_device_handler(self):
         thread = cycle_thread(self.taskHandle)
         thread.start()
-
 
     def stop_device_handler(self):
         DAQmxStopTask(self.taskHandle)

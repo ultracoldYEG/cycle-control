@@ -7,7 +7,7 @@ class Instruction():
 
         self.digital_pins = '0' * 24
         self.analog_functions = ['0'] * 8
-        self.novatech_functions = ['0'] * 8
+        self.novatech_functions = ['0'] * 12
 
     def set_digital_pins(self, flag_string):
         try:
@@ -35,13 +35,3 @@ class Instruction():
 
     def set_analog_strings(self, string_list):
         self.analog_func_strings = string_list
-
-class InstructionCycle(object):
-    def __init__(self, instructions):
-        self.instructions = instructions
-        self.analog_domain = []
-        self.novatech_domain = []
-        self.digital_domain = []
-        self.analog_data = [[], [], [], [], [], [], [], []]
-        self.novatech_data = [[], [], [], [], [], [], [], []]
-        self.digital_data = []

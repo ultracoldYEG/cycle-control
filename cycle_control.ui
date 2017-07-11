@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1239</width>
+    <width>1550</width>
     <height>756</height>
    </rect>
   </property>
@@ -28,7 +28,7 @@
            </sizepolicy>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>2</number>
           </property>
           <widget class="QWidget" name="tab">
            <attribute name="title">
@@ -267,42 +267,62 @@
               </column>
               <column>
                <property name="text">
-                <string>1</string>
+                <string>0 - Amplitude</string>
                </property>
               </column>
               <column>
                <property name="text">
-                <string>2</string>
+                <string>0 - Frequency</string>
                </property>
               </column>
               <column>
                <property name="text">
-                <string>3</string>
+                <string>0 - Phase</string>
                </property>
               </column>
               <column>
                <property name="text">
-                <string>4</string>
+                <string>1 - Amplitude</string>
                </property>
               </column>
               <column>
                <property name="text">
-                <string>5</string>
+                <string>1 - Frequency</string>
                </property>
               </column>
               <column>
                <property name="text">
-                <string>6</string>
+                <string>1 - Phase</string>
                </property>
               </column>
               <column>
                <property name="text">
-                <string>7</string>
+                <string>2 - Amplitude</string>
                </property>
               </column>
               <column>
                <property name="text">
-                <string>8</string>
+                <string>2 - Frequency</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>2 - Phase</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>3 - Amplitude</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>3 - Frequency</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>3 - Phase</string>
                </property>
               </column>
              </widget>
@@ -511,7 +531,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1239</width>
+     <width>1550</width>
      <height>21</height>
     </rect>
    </property>

@@ -130,9 +130,6 @@ def pb_stop_programming():
 
 
 def pb_inst_pbonly(*args):
-    t = list(args)
-    # Argument 3 must be a double
-    args = tuple(t)
     return spinapi.pb_inst_pbonly(args)
 
 

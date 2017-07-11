@@ -10,6 +10,7 @@ import sys
 import os
 
 from programmer import *
+from instruction import *
 
 ROOT_PATH = os.getcwd()
 
@@ -285,8 +286,8 @@ class Main(QMainWindow, Ui_MainWindow):
 
 
 class TableCheckBox(QWidget):
-    def __init__(self, gui, row, col, state):
-        QWidget.__init__(self)
+    def __init__(self, gui, row, col, state, *args, **kwargs):
+        QWidget.__init__(self, *args, **kwargs)
         cb = QCheckBox()
         cb.setCheckState(QtCore.Qt.Unchecked)
         if state:
