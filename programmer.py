@@ -95,11 +95,13 @@ class Programmer(object):
                     freq = np.base_repr(int(nova_data[3 * channel + 1][sample] * 1e6 / 0.1), 16).zfill(8)
                     phase = np.base_repr(int(nova_data[3 * channel + 2][sample]), 16).zfill(4)
 
-                    print 't{0:1.1} {1:4.4} {2:8.8},{3:4.4},{4:4.4},{5:2.2}'.format(str(channel), addr,  freq, phase, amp, '00')
+                    print 't{0:1.1} {1:4.4} {2:8.8},{3:4.4},{4:4.4},{5:2.2}\n'.format(str(channel), addr,  freq, phase, amp, '00')
 
                     #tn 3fff aabbccdd,eeff,gghh,ii
                     #channel , address, freq, phase, amp, dwell
                     #TODO proper dwell time setting for external triggering?
+
+                    #convert V to dBm: dBm = 10 * log_10 ( V_RMS^2 / (50ohm * 1mW) )
 
     def start_device_handler(self):
         thread = cycle_thread(self.taskHandle)
