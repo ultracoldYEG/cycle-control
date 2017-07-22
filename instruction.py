@@ -33,13 +33,15 @@ class Instruction(object):
 
     def set_duration(self, duration):
         try:
-            self.duration = float(duration)
+            float(duration)
+            self.duration = duration
         except ValueError:
             pass
 
     def set_stepsize(self, stepsize):
         try:
-            self.stepsize = float(stepsize)
+            float(stepsize)
+            self.stepsize = stepsize
         except ValueError:
             pass
 
@@ -59,7 +61,8 @@ class StaticProcessVariable(object):
 
     def set_default(self, default):
         try:
-            self.default = float(default)
+            float(default)
+            self.default = default
         except ValueError:
             pass
 
@@ -73,13 +76,15 @@ class DynamicProcessVariable(StaticProcessVariable):
 
     def set_start(self, start):
         try:
-            self.start = float(start)
+            float(start)
+            self.start = start
         except ValueError:
             pass
 
     def set_end(self, end):
         try:
-            self.end = float(end)
+            float(end)
+            self.end = end
         except ValueError:
             pass
 

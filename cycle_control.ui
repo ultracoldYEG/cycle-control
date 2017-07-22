@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1558</width>
-    <height>788</height>
+    <width>1572</width>
+    <height>822</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,659 +18,750 @@
     <item>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_9">
-        <item>
-         <widget class="QTabWidget" name="tabWidget">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="currentIndex">
-           <number>0</number>
-          </property>
-          <widget class="QWidget" name="tab_4">
-           <attribute name="title">
-            <string>Variables</string>
-           </attribute>
+       <widget class="QTabWidget" name="tabWidget_2">
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <widget class="QWidget" name="MainTab">
+         <attribute name="title">
+          <string>Variables</string>
+         </attribute>
+         <layout class="QHBoxLayout" name="horizontalLayout_8">
+          <item>
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <item>
-             <layout class="QVBoxLayout" name="verticalLayout_4">
-              <item>
-               <widget class="QGroupBox" name="groupBox_4">
-                <property name="title">
-                 <string>Dynamic Process Variables</string>
-                </property>
-                <layout class="QHBoxLayout" name="horizontalLayout_5">
+             <widget class="QGroupBox" name="groupBox_6">
+              <property name="title">
+               <string>File Management</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_13">
+               <item>
+                <layout class="QVBoxLayout" name="verticalLayout_12">
                  <item>
-                  <layout class="QHBoxLayout" name="horizontalLayout_3">
-                   <item>
-                    <widget class="QListWidget" name="listWidget">
-                     <property name="enabled">
-                      <bool>true</bool>
+                  <spacer name="verticalSpacer_4">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <layout class="QGridLayout" name="gridLayout_3">
+                   <item row="1" column="0">
+                    <widget class="QPushButton" name="save_button">
+                     <property name="text">
+                      <string>Save Preset</string>
                      </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="0">
+                    <widget class="QPushButton" name="load_button">
+                     <property name="text">
+                      <string>Load Preset</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QLineEdit" name="save_name">
                      <property name="sizePolicy">
-                      <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+                      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                        <horstretch>0</horstretch>
                        <verstretch>0</verstretch>
                       </sizepolicy>
                      </property>
-                     <property name="minimumSize">
-                      <size>
-                       <width>300</width>
-                       <height>0</height>
-                      </size>
-                     </property>
-                     <property name="maximumSize">
-                      <size>
-                       <width>300</width>
-                       <height>16777215</height>
-                      </size>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="load_combo"/>
+                   </item>
+                   <item row="2" column="0">
+                    <widget class="QLabel" name="label_2">
+                     <property name="text">
+                      <string>Path:</string>
                      </property>
                     </widget>
                    </item>
-                   <item>
-                    <layout class="QVBoxLayout" name="verticalLayout_3">
-                     <item>
-                      <spacer name="verticalSpacer_3">
-                       <property name="orientation">
-                        <enum>Qt::Vertical</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>20</width>
-                         <height>40</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="new_dyn_var">
-                       <property name="text">
-                        <string>New Dynamic Var!</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <layout class="QGridLayout" name="gridLayout_4">
-                       <item row="0" column="0">
-                        <widget class="QLabel" name="label">
-                         <property name="text">
-                          <string>Procedure Variable Name</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="3">
-                        <widget class="QLabel" name="label_7">
-                         <property name="text">
-                          <string>Default</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="4">
-                        <widget class="QLabel" name="label_8">
-                         <property name="text">
-                          <string>Computed Step Size</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="4">
-                        <widget class="QLabel" name="step_size0">
-                         <property name="text">
-                          <string/>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="2">
-                        <widget class="QLabel" name="label_6">
-                         <property name="text">
-                          <string>End</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="2">
-                        <widget class="QLineEdit" name="var_end0"/>
-                       </item>
-                       <item row="1" column="3">
-                        <widget class="QLineEdit" name="var_default0"/>
-                       </item>
-                       <item row="1" column="1">
-                        <widget class="QLineEdit" name="var_start0"/>
-                       </item>
-                       <item row="0" column="1">
-                        <widget class="QLabel" name="label_3">
-                         <property name="text">
-                          <string>Start</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="5">
-                        <widget class="QCheckBox" name="send_var0_cb">
-                         <property name="text">
-                          <string>Send Variable</string>
-                         </property>
-                         <property name="tristate">
-                          <bool>false</bool>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="5">
-                        <widget class="QCheckBox" name="log_cb0">
-                         <property name="text">
-                          <string>Logarithmic</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="1" column="0">
-                        <widget class="QLineEdit" name="proc_var0"/>
-                       </item>
-                      </layout>
-                     </item>
-                     <item>
-                      <spacer name="verticalSpacer">
-                       <property name="orientation">
-                        <enum>Qt::Vertical</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>20</width>
-                         <height>40</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                    </layout>
+                   <item row="2" column="1">
+                    <widget class="QLineEdit" name="preset_path"/>
                    </item>
                   </layout>
                  </item>
-                </layout>
-               </widget>
-              </item>
-              <item>
-               <widget class="QGroupBox" name="groupBox_5">
-                <property name="title">
-                 <string>Static process Variables</string>
-                </property>
-                <layout class="QHBoxLayout" name="horizontalLayout_6">
                  <item>
-                  <layout class="QHBoxLayout" name="horizontalLayout_4">
-                   <item>
-                    <widget class="QListWidget" name="listWidget_2">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
+                  <spacer name="verticalSpacer_2">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupBox_4">
+              <property name="title">
+               <string>Dynamic Process Variables</string>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_5">
+               <item>
+                <layout class="QVBoxLayout" name="verticalLayout_7">
+                 <item>
+                  <widget class="QListWidget" name="dyn_var_list">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>300</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>16777215</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="alternatingRowColors">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <layout class="QGridLayout" name="gridLayout_4" rowstretch="0,0,0,0,0,0,0,0,0">
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="label_7">
+                     <property name="text">
+                      <string>Default</string>
                      </property>
-                     <property name="minimumSize">
-                      <size>
-                       <width>300</width>
-                       <height>0</height>
-                      </size>
-                     </property>
-                     <property name="maximumSize">
-                      <size>
-                       <width>300</width>
-                       <height>16777215</height>
-                      </size>
+                     <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                      </property>
                     </widget>
                    </item>
-                   <item>
-                    <layout class="QGridLayout" name="gridLayout_5">
-                     <item row="1" column="0">
-                      <widget class="QLineEdit" name="lineEdit"/>
-                     </item>
-                    </layout>
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="label">
+                     <property name="text">
+                      <string>Variable Name</string>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_3">
+                     <property name="text">
+                      <string>Start</string>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QLineEdit" name="dyn_var_name"/>
+                   </item>
+                   <item row="4" column="0">
+                    <widget class="QLabel" name="label_8">
+                     <property name="text">
+                      <string>Computed Step Size</string>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="0">
+                    <widget class="QLabel" name="label_6">
+                     <property name="text">
+                      <string>End</string>
+                     </property>
+                     <property name="alignment">
+                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
+                    <widget class="QLineEdit" name="dyn_var_start"/>
+                   </item>
+                   <item row="4" column="1">
+                    <widget class="QLabel" name="dyn_var_stepsize">
+                     <property name="text">
+                      <string/>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QLineEdit" name="dyn_var_end"/>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QLineEdit" name="dyn_var_default"/>
+                   </item>
+                   <item row="7" column="1">
+                    <widget class="QPushButton" name="new_dyn_var">
+                     <property name="text">
+                      <string>New Dynamic Variable</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="5" column="1">
+                    <widget class="QCheckBox" name="dyn_var_send">
+                     <property name="text">
+                      <string>Send Variable</string>
+                     </property>
+                     <property name="tristate">
+                      <bool>false</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="6" column="1">
+                    <widget class="QCheckBox" name="dyn_var_log">
+                     <property name="text">
+                      <string>Logarithmic</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="8" column="1">
+                    <widget class="QPushButton" name="delete_dyn_var">
+                     <property name="text">
+                      <string>Delete Selected Dynamic Variable</string>
+                     </property>
+                    </widget>
                    </item>
                   </layout>
                  </item>
                 </layout>
-               </widget>
-              </item>
-             </layout>
+               </item>
+              </layout>
+             </widget>
             </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="tab">
-           <attribute name="title">
-            <string>Digital Outputs</string>
-           </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_7">
             <item>
-             <widget class="QTableWidget" name="digital_table">
-              <column>
-               <property name="text">
-                <string>Name</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>Duration</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>0</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>1</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>2</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>3</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>4</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>5</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>6</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>7</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>8</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>9</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>10</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>11</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>12</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>13</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>14</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>15</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>16</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>17</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>18</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>19</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>20</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>21</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>22</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>23</string>
-               </property>
-              </column>
+             <widget class="QGroupBox" name="groupBox_5">
+              <property name="title">
+               <string>Static process Variables</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_4">
+               <item>
+                <layout class="QVBoxLayout" name="verticalLayout_5">
+                 <item>
+                  <widget class="QTableWidget" name="stat_var_table">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>300</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <attribute name="horizontalHeaderDefaultSectionSize">
+                    <number>150</number>
+                   </attribute>
+                   <attribute name="horizontalHeaderStretchLastSection">
+                    <bool>true</bool>
+                   </attribute>
+                   <column>
+                    <property name="text">
+                     <string>Variable Name</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Value</string>
+                    </property>
+                   </column>
+                  </widget>
+                 </item>
+                 <item>
+                  <layout class="QGridLayout" name="gridLayout_7">
+                   <item row="0" column="0">
+                    <widget class="QPushButton" name="new_stat_var">
+                     <property name="text">
+                      <string>New Static Variable</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QPushButton" name="delete_stat_var">
+                     <property name="text">
+                      <string>Delete Selected Static Variable</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
+               </item>
+              </layout>
              </widget>
             </item>
            </layout>
-          </widget>
-          <widget class="QWidget" name="tab_2">
-           <attribute name="title">
-            <string>Analog Outputs</string>
-           </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_2">
-            <item>
-             <widget class="QTableWidget" name="analog_table">
-              <attribute name="verticalHeaderDefaultSectionSize">
-               <number>26</number>
-              </attribute>
-              <column>
-               <property name="text">
-                <string>Name</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>Duration</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>Step Size</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>1</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>2</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>3</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>4</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>5</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>6</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>7</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>8</string>
-               </property>
-              </column>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="Staging">
+         <attribute name="title">
+          <string>Primary Staging</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_11">
+          <item>
+           <layout class="QGridLayout" name="gridLayout_6">
+            <item row="0" column="0">
+             <widget class="QTabWidget" name="StagingTabs">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="currentIndex">
+               <number>2</number>
+              </property>
+              <widget class="QWidget" name="digital">
+               <attribute name="title">
+                <string>Digital Outputs</string>
+               </attribute>
+               <layout class="QVBoxLayout" name="verticalLayout_14">
+                <item>
+                 <widget class="QTableWidget" name="digital_table">
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="alternatingRowColors">
+                   <bool>true</bool>
+                  </property>
+                  <property name="showGrid">
+                   <bool>true</bool>
+                  </property>
+                  <property name="gridStyle">
+                   <enum>Qt::SolidLine</enum>
+                  </property>
+                  <property name="sortingEnabled">
+                   <bool>false</bool>
+                  </property>
+                  <property name="cornerButtonEnabled">
+                   <bool>true</bool>
+                  </property>
+                  <attribute name="horizontalHeaderHighlightSections">
+                   <bool>true</bool>
+                  </attribute>
+                  <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
+                   <bool>false</bool>
+                  </attribute>
+                  <attribute name="verticalHeaderHighlightSections">
+                   <bool>true</bool>
+                  </attribute>
+                  <attribute name="verticalHeaderShowSortIndicator" stdset="0">
+                   <bool>false</bool>
+                  </attribute>
+                  <column>
+                   <property name="text">
+                    <string>Name</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>Duration</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>0</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>1</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>2</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>3</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>4</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>5</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>6</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>7</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>8</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>9</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>10</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>11</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>12</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>13</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>14</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>15</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>16</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>17</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>18</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>19</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>20</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>21</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>22</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>23</string>
+                   </property>
+                  </column>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+              <widget class="QWidget" name="analog">
+               <attribute name="title">
+                <string>Analog Outputs</string>
+               </attribute>
+               <layout class="QVBoxLayout" name="verticalLayout_2">
+                <item>
+                 <widget class="QTableWidget" name="analog_table">
+                  <property name="alternatingRowColors">
+                   <bool>true</bool>
+                  </property>
+                  <attribute name="verticalHeaderDefaultSectionSize">
+                   <number>26</number>
+                  </attribute>
+                  <column>
+                   <property name="text">
+                    <string>Name</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>Duration</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>Step Size</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>1</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>2</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>3</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>4</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>5</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>6</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>7</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>8</string>
+                   </property>
+                  </column>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+              <widget class="QWidget" name="nova">
+               <attribute name="title">
+                <string>Novatech Outputs</string>
+               </attribute>
+               <layout class="QVBoxLayout" name="verticalLayout_6">
+                <item>
+                 <widget class="QTableWidget" name="novatech_table">
+                  <property name="alternatingRowColors">
+                   <bool>true</bool>
+                  </property>
+                  <attribute name="verticalHeaderDefaultSectionSize">
+                   <number>26</number>
+                  </attribute>
+                  <column>
+                   <property name="text">
+                    <string>Name</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>Duration</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>Step Size</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>0 - Amplitude</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>0 - Frequency</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>0 - Phase</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>1 - Amplitude</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>1 - Frequency</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>1 - Phase</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>2 - Amplitude</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>2 - Frequency</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>2 - Phase</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>3 - Amplitude</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>3 - Frequency</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>3 - Phase</string>
+                   </property>
+                  </column>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QGroupBox" name="groupBox">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>83</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="title">
+               <string>Instruction Buttons</string>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_9">
+               <item>
+                <layout class="QGridLayout" name="gridLayout">
+                 <item row="0" column="0">
+                  <widget class="QPushButton" name="insert_inst">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="text">
+                    <string>Insert new instruction after number:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QSpinBox" name="insert_inst_num">
+                   <property name="minimum">
+                    <number>-1</number>
+                   </property>
+                   <property name="value">
+                    <number>-1</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QPushButton" name="remove_inst">
+                   <property name="text">
+                    <string>Remove instruction number:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QSpinBox" name="remove_inst_num">
+                   <property name="minimum">
+                    <number>-1</number>
+                   </property>
+                   <property name="value">
+                    <number>-1</number>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
              </widget>
             </item>
            </layout>
-          </widget>
-          <widget class="QWidget" name="tab_3">
-           <attribute name="title">
-            <string>Novatech Outputs</string>
-           </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_6">
-            <item>
-             <widget class="QTableWidget" name="novatech_table">
-              <attribute name="verticalHeaderDefaultSectionSize">
-               <number>26</number>
-              </attribute>
-              <column>
-               <property name="text">
-                <string>Name</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>Duration</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>Step Size</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>0 - Amplitude</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>0 - Frequency</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>0 - Phase</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>1 - Amplitude</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>1 - Frequency</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>1 - Phase</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>2 - Amplitude</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>2 - Frequency</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>2 - Phase</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>3 - Amplitude</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>3 - Frequency</string>
-               </property>
-              </column>
-              <column>
-               <property name="text">
-                <string>3 - Phase</string>
-               </property>
-              </column>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </widget>
-        </item>
-       </layout>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+      <item>
+       <widget class="Line" name="line">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
       </item>
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout">
-        <item>
-         <widget class="QGroupBox" name="groupBox">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>83</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>250</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="title">
-           <string/>
-          </property>
-          <widget class="QWidget" name="layoutWidget">
-           <property name="geometry">
-            <rect>
-             <x>10</x>
-             <y>0</y>
-             <width>233</width>
-             <height>83</height>
-            </rect>
-           </property>
-           <layout class="QGridLayout" name="gridLayout">
-            <item row="1" column="1">
-             <widget class="QSpinBox" name="insert_inst_num">
-              <property name="minimum">
-               <number>-1</number>
-              </property>
-              <property name="value">
-               <number>-1</number>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="1">
-             <widget class="QSpinBox" name="remove_inst_num">
-              <property name="minimum">
-               <number>-1</number>
-              </property>
-              <property name="value">
-               <number>-1</number>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QPushButton" name="insert_inst">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Insert new instruction after number:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QPushButton" name="remove_inst">
-              <property name="text">
-               <string>Remove instruction number:</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </widget>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="groupBox_2">
-          <property name="title">
-           <string/>
-          </property>
-          <widget class="QWidget" name="gridLayoutWidget_2">
-           <property name="geometry">
-            <rect>
-             <x>0</x>
-             <y>10</y>
-             <width>571</width>
-             <height>71</height>
-            </rect>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_3">
-            <item row="0" column="0">
-             <widget class="QPushButton" name="load_button">
-              <property name="text">
-               <string>Load Preset</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="2">
-             <widget class="QLineEdit" name="preset_path"/>
-            </item>
-            <item row="1" column="0">
-             <widget class="QPushButton" name="save_button">
-              <property name="text">
-               <string>Save Preset</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QComboBox" name="load_combo"/>
-            </item>
-            <item row="1" column="1">
-             <widget class="QLineEdit" name="save_name">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="2">
-             <widget class="QLabel" name="label_2">
-              <property name="text">
-               <string>Path:</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </widget>
-        </item>
         <item>
          <widget class="QGroupBox" name="groupBox_3">
           <property name="sizePolicy">
@@ -682,45 +773,45 @@
           <property name="minimumSize">
            <size>
             <width>300</width>
-            <height>0</height>
+            <height>100</height>
            </size>
           </property>
           <property name="title">
-           <string/>
+           <string>Device Buttons</string>
           </property>
-          <widget class="QWidget" name="gridLayoutWidget">
-           <property name="geometry">
-            <rect>
-             <x>0</x>
-             <y>0</y>
-             <width>297</width>
-             <height>83</height>
-            </rect>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_2">
-            <item row="0" column="0">
-             <widget class="QPushButton" name="program_device_button">
-              <property name="text">
-               <string>Push Instructions to Devices</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QPushButton" name="stop_device_button">
-              <property name="text">
-               <string>Stop Devices</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QPushButton" name="start_device_button">
-              <property name="text">
-               <string>Start Devices</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
+          <property name="flat">
+           <bool>false</bool>
+          </property>
+          <property name="checkable">
+           <bool>false</bool>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_5">
+           <item row="0" column="0">
+            <layout class="QGridLayout" name="gridLayout_2">
+             <item row="2" column="0">
+              <widget class="QPushButton" name="stop_device_button">
+               <property name="text">
+                <string>Stop Devices</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QPushButton" name="program_device_button">
+               <property name="text">
+                <string>Push Instructions to Devices</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QPushButton" name="start_device_button">
+               <property name="text">
+                <string>Start Devices</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
          </widget>
         </item>
        </layout>
@@ -734,7 +825,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1558</width>
+     <width>1572</width>
      <height>21</height>
     </rect>
    </property>

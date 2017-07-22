@@ -28,6 +28,12 @@
                                      end;                 0.05;        0.0; 100010010000000000000000;                                                            0 0 0 0 0 0 0 0 ;                                                    0 0 0 0 0 0 0 0 0 0 0 0 
 
  ===Dynamic Process Variables===    Name;                Start;                  End;              Default;     Logarithmic;   Send
-                                  test 1;                  2.0;                  4.0;                  5.0;               0;      0
-                      dynamic variable 1;                  0.0;                  0.0;                  0.0;               0;      0
+                                  test 1;                  2.0;                  4.0;                  5.0;               1;      1
+                      dynamic variable 1;                  0.0;                  0.0;                  0.0;               1;      1
                                  testvar;                  4.0;                  5.0;                  3.0;               1;      1
+
+  ===Static Process Variables===    Name;                Value
+                               testvario;               345345
+                                   test2;             9.11e-31
+                       static variable 3;                    5
+                                     new;               .23234

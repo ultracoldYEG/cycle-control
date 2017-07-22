@@ -27,7 +27,7 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.instructions = self.procedure.instructions
         self.dynamic_vars = self.procedure.dynamic_variables
-        self.current_dyn_var = None
+        self.static_vars = self.procedure.static_variables
 
         self.updating = False
 
@@ -39,23 +39,24 @@ class Main(QMainWindow, Ui_MainWindow):
         self.novatech_table.itemChanged.connect(self.novatech_table_change)
         self.analog_table.itemChanged.connect(self.analog_table_change)
 
-        self.digital_table.setAlternatingRowColors(True)
-        self.novatech_table.setAlternatingRowColors(True)
-        self.analog_table.setAlternatingRowColors(True)
-
         for i in range(2,self.digital_table.columnCount()):
             self.digital_table.setColumnWidth(i, 35)
 
         # ------ Process Variables GUI ---------
-        self.proc_var0.textEdited.connect(self.update_dynamic_var_name)
-        self.var_start0.textEdited.connect(self.update_dynamic_var_start)
-        self.var_end0.textEdited.connect(self.update_dynamic_var_end)
-        self.var_default0.textEdited.connect(self.update_dynamic_var_default)
-        self.log_cb0.stateChanged.connect(self.update_dynamic_var_log)
-        self.send_var0_cb.stateChanged.connect(self.update_dynamic_var_send)
+        self.dyn_var_name.textEdited.connect(self.update_dynamic_var_name)
+        self.dyn_var_start.editingFinished.connect(self.update_dynamic_var_start)
+        self.dyn_var_end.editingFinished.connect(self.update_dynamic_var_end)
+        self.dyn_var_default.editingFinished.connect(self.update_dynamic_var_default)
+        self.dyn_var_log.stateChanged.connect(self.update_dynamic_var_log)
+        self.dyn_var_send.stateChanged.connect(self.update_dynamic_var_send)
 
-        self.listWidget.currentRowChanged.connect(self.select_dyn_var)
+        self.dyn_var_list.currentRowChanged.connect(self.select_dyn_var)
         self.new_dyn_var.clicked.connect(self.new_dyn_var_handler)
+        self.delete_dyn_var.clicked.connect(self.remove_current_dyn_var)
+
+        self.stat_var_table.itemChanged.connect(self.stat_var_table_change)
+        self.new_stat_var.clicked.connect(self.new_stat_var_handler)
+        self.delete_stat_var.clicked.connect(self.remove_current_stat_var)
 
         # ------ Other GUI ---------
         self.preset_path.textChanged.connect(self.populate_load_presets)
@@ -241,48 +242,111 @@ class Main(QMainWindow, Ui_MainWindow):
         else:
             self.instructions[r].set_digital_pins(digits[:c] + '1' + digits[c+1:])
 
+    def new_stat_var_handler(self):
+        if self.updating:
+            return
+        self.updating = True
+        num = len(self.static_vars)
+        stat_var = StaticProcessVariable()
+        stat_var.name = 'static variable '+str(num)
+        self.static_vars.append(stat_var)
+        self.insert_stat_var_row(num)
+        self.updating = False
 
-    def select_dyn_var(self, event):
-        self.current_dyn_var = self.dynamic_vars[event]
-        self.proc_var0.setText(self.current_dyn_var.name)
-        self.var_start0.setText(str(self.current_dyn_var.start))
-        self.var_end0.setText(str(self.current_dyn_var.end))
-        self.var_default0.setText(str(self.current_dyn_var.default))
-        self.log_cb0.setCheckState(bool_to_checkstate(self.current_dyn_var.logarithmic))
-        self.send_var0_cb.setCheckState(bool_to_checkstate(self.current_dyn_var.send))
+    def remove_current_stat_var(self):
+        if self.static_vars:
+            row = self.stat_var_table.currentRow()
+            del self.static_vars[row]
+            self.redraw_all_stat_var()
+
+    def stat_var_table_change(self, item):
+        if self.updating or not item:
+            return
+        self.updating = True
+        row = self.stat_var_table.currentRow()
+        col = self.stat_var_table.currentColumn()
+        stat_var = self.static_vars[row]
+
+        if col == 0:
+            stat_var.set_name(item.text())
+        elif col == 1:
+            stat_var.set_default(item.text())
+        self.redraw_stat_var_row(row)
+        self.updating = False
+
+    def redraw_all_stat_var(self):
+        for i in range(self.stat_var_table.rowCount()):
+            self.stat_var_table.removeRow(0)
+        for i in range(len(self.static_vars)):
+            self.insert_stat_var_row(i)
+
+    def redraw_stat_var_row(self, row):
+        self.stat_var_table.removeRow(row)
+        self.insert_stat_var_row(row)
+
+    def insert_stat_var_row(self, row):
+        stat_var = self.static_vars[row]
+        self.stat_var_table.insertRow(row)
+        self.stat_var_table.setItem(row, 0, QTableWidgetItem(stat_var.name))
+        self.stat_var_table.setItem(row, 1, QTableWidgetItem(str(stat_var.default)))
+
+    def remove_stat_var_row(self, row):
+        self.stat_var_table.removeRow(row)
+
+    def select_dyn_var(self, row):
+        if self.dynamic_vars:
+            self.current_dyn_var = self.dynamic_vars[row]
+            self.dyn_var_name.setText(self.current_dyn_var.name)
+            self.dyn_var_start.setText(str(self.current_dyn_var.start))
+            self.dyn_var_end.setText(str(self.current_dyn_var.end))
+            self.dyn_var_default.setText(str(self.current_dyn_var.default))
+            self.dyn_var_log.setCheckState(bool_to_checkstate(self.current_dyn_var.logarithmic))
+            self.dyn_var_send.setCheckState(bool_to_checkstate(self.current_dyn_var.send))
 
     def new_dyn_var_handler(self):
         num = len(self.dynamic_vars)
         dyn_var = DynamicProcessVariable()
         dyn_var.name = 'dynamic variable '+str(num)
         self.dynamic_vars.append(dyn_var)
-        self.listWidget.addItem(QListWidgetItem(dyn_var.name))
-        self.listWidget.setCurrentRow(num)
+        self.insert_dyn_var(num)
 
-    def add_dyn_var(self, dyn_var):
-        num = len(self.dynamic_vars)
-        self.dynamic_vars.append(dyn_var)
-        self.listWidget.addItem(QListWidgetItem(dyn_var.name))
-        self.listWidget.setCurrentRow(num)
+    def redraw_all_dyn_var(self):
+        for i in range(self.dyn_var_list.count()):
+            self.dyn_var_list.takeItem(0)
+        for i in range(len(self.dynamic_vars)):
+            self.insert_dyn_var(i)
 
-    def update_dynamic_var_list_widget(self, name):
-        row = self.listWidget.currentRow()
-        self.listWidget.insertItem(row, QListWidgetItem(name))
-        self.listWidget.setCurrentRow(row)
-        self.listWidget.takeItem(row+1)
+    def redraw_dyn_var_row(self, row):
+        self.insert_dyn_var(row)
+        self.dyn_var_list.takeItem(row + 1)
+
+    def insert_dyn_var(self, row):
+        dyn_var = self.dynamic_vars[row]
+        self.dyn_var_list.insertItem(row, QListWidgetItem(dyn_var.name))
+        self.dyn_var_list.setCurrentRow(row)
+
+    def remove_current_dyn_var(self):
+        if self.dynamic_vars:
+            row = self.dyn_var_list.currentRow()
+            del self.dynamic_vars[row]
+            self.redraw_all_dyn_var()
+            self.dyn_var_list.setCurrentRow(row)
 
     def update_dynamic_var_name(self, name):
         self.current_dyn_var.set_name(name)
-        self.update_dynamic_var_list_widget(name)
+        self.redraw_dyn_var_row(self.dyn_var_list.currentRow())
 
-    def update_dynamic_var_start(self, start):
-        self.current_dyn_var.set_start(start)
+    def update_dynamic_var_start(self):
+        self.current_dyn_var.set_start(str(self.dyn_var_start.text()))
+        self.dyn_var_start.setText(self.current_dyn_var.start)
 
-    def update_dynamic_var_end(self, end):
-        self.current_dyn_var.set_end(end)
+    def update_dynamic_var_end(self):
+        self.current_dyn_var.set_end(str(self.dyn_var_end.text()))
+        self.dyn_var_end.setText(self.current_dyn_var.end)
 
-    def update_dynamic_var_default(self, default):
-        self.current_dyn_var.set_default(default)
+    def update_dynamic_var_default(self):
+        self.current_dyn_var.set_default(str(self.dyn_var_default.text()))
+        self.dyn_var_default.setText(self.current_dyn_var.default)
 
     def update_dynamic_var_log(self, state):
         self.current_dyn_var.set_log(state)
@@ -296,6 +360,7 @@ class Main(QMainWindow, Ui_MainWindow):
         with open(str(self.preset_path.text()) + str(self.save_name.text()) + '.txt', 'w+') as f:
             inst_format = '{:>40}; {:>20}; {:>10}; {:>20}; {:>75}; {:>75}\n'
             dynamic_var_format = '{:>40}; {:>20}; {:>20}; {:>20}; {:>15}; {:>6}\n'
+            static_var_format = '{:>40}; {:>20}\n'
             f.write(inst_format.format(
                 '===Instructions===       Name',
                 'Duration',
@@ -331,7 +396,16 @@ class Main(QMainWindow, Ui_MainWindow):
                     int(i.logarithmic),
                     int(i.send)
                 ))
-
+            f.write('\n')
+            f.write(static_var_format.format(
+                '===Static Process Variables===    Name',
+                'Value'
+            ))
+            for i in self.static_vars:
+                f.write(static_var_format.format(
+                    i.name,
+                    i.default,
+                ))
 
     def populate_load_presets(self):
         # remove items currently in the dropdown list
@@ -346,12 +420,12 @@ class Main(QMainWindow, Ui_MainWindow):
             print('failed to load presets')
 
     def load_preset_handler(self):
-        parsers = iter([self.parse_inst_line, self.parse_dyn_var_line])
+        parsers = iter([self.parse_inst_line, self.parse_dyn_var_line, self.parse_stat_var_line])
         parser = parsers.next()
         with open(str(self.preset_path.text()) + str(self.load_combo.currentText()), 'r') as f:
-            print dir(f)
             self.instructions = []
             self.dynamic_vars = []
+            self.static_vars = []
             f.next()
             for i in f:
                 i = [x.strip() for x in i.split(';')]
@@ -362,6 +436,8 @@ class Main(QMainWindow, Ui_MainWindow):
 
                 parser(i)
             self.redraw_all()
+            self.redraw_all_dyn_var()
+            self.redraw_all_stat_var()
 
     def parse_inst_line(self, line):
         inst = Instruction()
@@ -385,7 +461,15 @@ class Main(QMainWindow, Ui_MainWindow):
         dyn_var.set_log(line[4])
         dyn_var.set_send(line[5])
 
-        self.add_dyn_var(dyn_var)
+        self.dynamic_vars.append(dyn_var)
+
+    def parse_stat_var_line(self, line):
+        stat_var = StaticProcessVariable()
+
+        stat_var.set_name(line[0])
+        stat_var.set_default(line[1])
+
+        self.static_vars.append(stat_var)
 
     def start_device_handler(self):
         self.programmer.start_device_handler()

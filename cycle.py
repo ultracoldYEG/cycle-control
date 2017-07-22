@@ -55,7 +55,7 @@ class Cycle(object):
                 self.analog_domain.append(i + total_t)
             for channel in range(len(waveforms)):
                 self.analog_data[channel] += waveforms[channel]
-            total_t += inst.duration
+            total_t += float(inst.duration)
 
     def create_novatech_waveform(self):
         total_t = 0.0
@@ -66,12 +66,12 @@ class Cycle(object):
             for channel in range(len(waveforms)):
                 self.novatech_data[channel] += waveforms[channel]
 
-            total_t += inst.duration
+            total_t += float(inst.duration)
 
     def create_digital_waveform(self):
         domain = [0.0]
         for inst in self.instructions:
-            domain.append(domain[-1] + inst.duration)
+            domain.append(domain[-1] + float(inst.duration))
 
         iter_pins = iter([inst.digital_pins for inst in self.instructions])
         iter_domains = [iter(domain), iter(self.analog_domain), iter(self.novatech_domain)]
@@ -124,8 +124,8 @@ class Cycle(object):
             else:
                 return
 
-        duration = inst.duration
-        stepsize = inst.stepsize
+        duration = float(inst.duration)
+        stepsize = float(inst.stepsize)
 
         if all((func == constFunc for func, args in funcs)):
             domain = [0.0]
