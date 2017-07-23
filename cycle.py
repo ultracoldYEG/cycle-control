@@ -18,22 +18,36 @@ def frange(x, y, jump):
 def replace_bit(bits, i, repl):
     return bits[:i] + repl + bits[i+1:]
 
-def parse_function(string):
+def parse_function(string, variables):
     result = re.match(FUNCTION_REGEX, string)
     if result:
         key = result.group(1)
-        args = [float(x) for x in result.group(2).split(',')]
+        args = [parse_arg(x.strip(), variables) for x in result.group(2).split(',')]
+        if any([arg is None for arg in args]):
+            print('not a valid function: ', string)
+            return None, None
         return key, args
+
+    args = [parse_arg(string, variables)]
+    if args:
+        return 'const', args
+
+    print('not a valid function: ', string)
+    return None, None
+
+def parse_arg(arg, variables):
+    if arg in variables:
+        return variables.get(arg)
     try:
-        args = [float(string)]
+        arg = float(arg)
+        return arg
     except ValueError:
-        print('not a valid function: ', string)
-        return None, None
-    return 'const', args
+        print('Couldnt parse argument ', arg)
 
 class Cycle(object):
-    def __init__(self, instructions):
+    def __init__(self, instructions, variables):
         self.instructions = instructions
+        self.variables = variables
 
         self.analog_domain = []
         self.novatech_domain = []
@@ -111,7 +125,7 @@ class Cycle(object):
     def create_single_waveform(self, inst, func_strings):
         funcs = []
         for func_string in func_strings:
-            key, args = parse_function(func_string)
+            key, args = parse_function(func_string, self.variables)
 
             if key == 'const':
                 funcs.append((constFunc, args))

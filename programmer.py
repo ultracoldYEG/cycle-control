@@ -1,7 +1,6 @@
 #from spinapi import *
 #from PyDAQmx import *
 
-from cycle import *
 from cycle_plotter import *
 from mock_spinapi import *
 from mock_PyDAQmx import *
@@ -31,19 +30,15 @@ class Programmer(object):
         pb_core_clock(100.0)
 
 
-    def program_device_handler(self, instructions):
+    def program_device_handler(self, cycle):
         pb_stop()
-        if len(instructions) <= 1:
-            print('Put in more instructions')
-            return
 
-        self.cycle = Cycle(instructions)
+        self.cycle = cycle
         self.cycle.create_waveforms()
 
         plotter = CyclePlotter(self.cycle)
         plotter.plot_digital_channels(0, 1, 2)
         plotter.plot_analog_channels(0,1,2)
-
 
         self.program_pulse_blaster()
         self.program_NI()
@@ -95,7 +90,7 @@ class Programmer(object):
                     freq = np.base_repr(int(nova_data[3 * channel + 1][sample] * 1e6 / 0.1), 16).zfill(8)
                     phase = np.base_repr(int(nova_data[3 * channel + 2][sample]), 16).zfill(4)
 
-                    print 't{0:1.1} {1:4.4} {2:8.8},{3:4.4},{4:4.4},{5:2.2}\n'.format(str(channel), addr,  freq, phase, amp, '00')
+                    #print 't{0:1.1} {1:4.4} {2:8.8},{3:4.4},{4:4.4},{5:2.2}'.format(str(channel), addr,  freq, phase, amp, '00')
 
                     #tn 3fff aabbccdd,eeff,gghh,ii
                     #channel , address, freq, phase, amp, dwell
@@ -123,7 +118,7 @@ class cycle_thread(threading.Thread):
         pb_start()
 
         DAQmxStartTask(self.taskHandle)
-        DAQmxWaitUntilTaskDone(self.taskHandle, 10.0) #seconds
+        DAQmxWaitUntilTaskDone(self.taskHandle, 1.0) #seconds
         DAQmxStopTask(self.taskHandle)
 
         pb_stop()

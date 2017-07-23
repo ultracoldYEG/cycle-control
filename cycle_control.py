@@ -6,6 +6,7 @@ except:
     from PyQt5.uic import loadUiType
     from PyQt5 import QtCore
     from PyQt5.QtWidgets import *
+    from PyQt5.QtGui import QCursor
 import sys
 import os
 
@@ -21,26 +22,29 @@ class Main(QMainWindow, Ui_MainWindow):
         super(Main, self).__init__()
         self.setupUi(self)
 
+        self.updating = UpdateLock(False)
+
         self.programmer = Programmer()
 
-        self.procedure = Procedure()
+        self.procedure = Procedure(self.programmer)
 
         self.instructions = self.procedure.instructions
         self.dynamic_vars = self.procedure.dynamic_variables
         self.static_vars = self.procedure.static_variables
 
-        self.updating = False
-
         #------ Instruction GUI ---------
-        self.insert_inst.clicked.connect(self.insert_inst_handler)
-        self.remove_inst.clicked.connect(self.remove_inst_handler)
+        for table in [self.digital_table, self.analog_table, self.novatech_table]:
+            table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.digital_table.customContextMenuRequested.connect(lambda event: self.dataTableMenu(self.digital_table))
+        self.analog_table.customContextMenuRequested.connect(lambda event: self.dataTableMenu(self.analog_table))
+        self.novatech_table.customContextMenuRequested.connect(lambda event: self.dataTableMenu(self.novatech_table))
 
         self.digital_table.itemChanged.connect(self.digital_table_change)
         self.novatech_table.itemChanged.connect(self.novatech_table_change)
         self.analog_table.itemChanged.connect(self.analog_table_change)
 
         for i in range(2,self.digital_table.columnCount()):
-            self.digital_table.setColumnWidth(i, 35)
+            self.digital_table.setColumnWidth(i, 25)
 
         # ------ Process Variables GUI ---------
         self.dyn_var_name.textEdited.connect(self.update_dynamic_var_name)
@@ -69,106 +73,112 @@ class Main(QMainWindow, Ui_MainWindow):
         self.stop_device_button.clicked.connect(self.stop_device_handler)
         self.program_device_button.clicked.connect(self.program_device_handler)
 
-    def insert_inst_handler(self):
-        if self.updating:
+    def dataTableMenu(self, table):
+        menu = QMenu()
+        new_row_pre = menu.addAction("Insert new instruction before")
+        new_row_aft = menu.addAction("Insert new instruction after")
+        del_row = menu.addAction("Remove instruction")
+        selectedItem = menu.exec_(QCursor.pos())
+        row = table.currentRow()
+        if selectedItem == new_row_pre:
+            self.insert_inst_handler(self.clip_inst_number(row))
+        if selectedItem == new_row_aft:
+            self.insert_inst_handler(self.clip_inst_number(row+1))
+        if selectedItem == del_row:
+            self.remove_inst_handler(self.clip_inst_number(row))
+
+    def insert_inst_handler(self, loc):
+        if self.updating.lock:
             return
-        self.updating = True
-        loc = self.clip_inst_number(self.insert_inst_num.value())
+        with self.updating:
+            inst = Instruction()
+            inst.set_name('Instruction ' + str(loc+1))
 
-        inst = Instruction()
-        inst.set_name('n' + str(loc))
-        inst.set_duration(np.random.rand())
-        inst.set_stepsize(0.01)
+            self.instructions.insert(loc, inst)
+            self.insert_row(loc)
 
-        self.instructions.insert(loc, inst)
-        self.insert_row(loc)
-        self.updating = False
-
-    def remove_inst_handler(self):
-        if self.updating:
+    def remove_inst_handler(self, loc):
+        if self.updating.lock or not self.instructions:
             return
-        self.updating = True
-        loc = self.clip_inst_number(self.remove_inst_num.value())
-
-        del self.instructions[loc - 1]
-
-        self.remove_row(loc - 1)
-        self.updating = False
+        with self.updating:
+            del self.instructions[loc]
+            self.remove_row(loc)
 
     def clip_inst_number(self, num):
         #limits the number between 0 and the number of instructions
-        if num < 0 or num > len(self.instructions):
+        if num < 0 or num >= len(self.instructions):
             return len(self.instructions)
         return num
 
     def analog_table_change(self):
-        if self.updating:
+        if self.updating.lock:
             return
-        self.updating = True
-        row = self.analog_table.currentRow()
-        col = self.analog_table.currentColumn()
-        item = self.analog_table.item(row, col)
-        inst = self.instructions[row]
+        with self.updating:
+            row = self.analog_table.currentRow()
+            col = self.analog_table.currentColumn()
+            item = self.analog_table.item(row, col)
+            inst = self.instructions[row]
 
-        if item:
-            item = item.text()
-            if col == 0:
-                inst.set_name(item)
-            elif col == 1:
-                inst.set_duration(item)
-            elif col == 2:
-                inst.set_stepsize(item)
-            elif col > 2:
-                inst.analog_functions[col - 3] = str(item)
-            self.redraw_row(row)
-        self.updating = False
+            if item:
+                item = item.text()
+                if col == 0:
+                    inst.set_name(item)
+                elif col == 1:
+                    inst.set_duration(item)
+                elif col == 2:
+                    inst.set_stepsize(item)
+                elif col > 2:
+                    inst.analog_functions[col - 3] = str(item)
+                self.redraw_row(row)
 
     def novatech_table_change(self, item):
-        if self.updating:
+        if self.updating.lock:
             return
-        self.updating = True
-        row = self.novatech_table.currentRow()
-        col = self.novatech_table.currentColumn()
-        inst = self.instructions[row]
+        with self.updating:
+            row = self.novatech_table.currentRow()
+            col = self.novatech_table.currentColumn()
+            inst = self.instructions[row]
 
-        if item:
-            item = item.text()
-            if col == 0:
-                inst.set_name(item)
-            elif col == 1:
-                inst.set_duration(item)
-            elif col == 2:
-                inst.set_stepsize(item)
-            elif col > 2:
-                inst.novatech_functions[col - 3] = str(item)
+            if item:
+                item = item.text()
+                if col == 0:
+                    inst.set_name(item)
+                elif col == 1:
+                    inst.set_duration(item)
+                elif col == 2:
+                    inst.set_stepsize(item)
+                elif col > 2:
+                    inst.novatech_functions[col - 3] = str(item)
 
-            self.redraw_row(row)
-        self.updating = False
+                self.redraw_row(row)
 
     def digital_table_change(self, item):
-        if self.updating:
+        if self.updating.lock:
             return
-        self.updating = True
-        row = self.digital_table.currentRow()
-        col = self.digital_table.currentColumn()
-        inst = self.instructions[row]
+        with self.updating:
+            row = self.digital_table.currentRow()
+            col = self.digital_table.currentColumn()
+            inst = self.instructions[row]
 
-        if item:
-            item=item.text()
-            if col == 0:
-                inst.set_name(item)
-            elif col == 1:
-                inst.set_duration(item)
-            self.redraw_row(row)
-        self.updating = False
+            if item:
+                item=item.text()
+                if col == 0:
+                    inst.set_name(item)
+                elif col == 1:
+                    inst.set_duration(item)
+                self.redraw_row(row)
 
     def redraw_all(self):
-        self.updating = True
-        for i in range(self.digital_table.rowCount()):
-            self.remove_row(0)
-        for i in range(len(self.instructions)):
-            self.insert_row(i)
-        self.updating = False
+        self.redraw_all_inst()
+        self.redraw_all_dyn_var()
+        self.redraw_all_stat_var()
+
+    def redraw_all_inst(self):
+        with self.updating:
+            for i in range(self.digital_table.rowCount()):
+                self.remove_row(0)
+            for i in range(len(self.instructions)):
+                self.insert_row(i)
 
     def redraw_row(self, row):
         self.remove_row(row)
@@ -200,6 +210,7 @@ class Main(QMainWindow, Ui_MainWindow):
                 new_string = str(self.instructions[row].analog_functions[col - 3])
 
             self.analog_table.setItem(row, col, QTableWidgetItem(new_string))
+            self.analog_table.setRowHeight(row, 25)
 
     def insert_novatech_table_row(self, row):
         self.novatech_table.insertRow(row)
@@ -217,6 +228,7 @@ class Main(QMainWindow, Ui_MainWindow):
                 new_string = str(self.instructions[row].novatech_functions[col - 3])
 
             self.novatech_table.setItem(row, col, QTableWidgetItem(new_string))
+            self.novatech_table.setRowHeight(row, 25)
 
     def insert_digital_grid_row(self, row):
         inst = self.instructions[row]
@@ -232,7 +244,7 @@ class Main(QMainWindow, Ui_MainWindow):
             else:
                 state = bool(int(inst.digital_pins[col-2]))
                 self.digital_table.setCellWidget(row, col, TableCheckBox(self, row, col, state))
-
+            self.digital_table.setRowHeight(row, 25)
 
     def update_digital(self, r, c):
         c-=2
@@ -243,15 +255,14 @@ class Main(QMainWindow, Ui_MainWindow):
             self.instructions[r].set_digital_pins(digits[:c] + '1' + digits[c+1:])
 
     def new_stat_var_handler(self):
-        if self.updating:
+        if self.updating.lock:
             return
-        self.updating = True
-        num = len(self.static_vars)
-        stat_var = StaticProcessVariable()
-        stat_var.name = 'static variable '+str(num)
-        self.static_vars.append(stat_var)
-        self.insert_stat_var_row(num)
-        self.updating = False
+        with self.updating:
+            num = len(self.static_vars)
+            stat_var = StaticProcessVariable()
+            stat_var.name = 'static variable '+str(num)
+            self.static_vars.append(stat_var)
+            self.insert_stat_var_row(num)
 
     def remove_current_stat_var(self):
         if self.static_vars:
@@ -260,19 +271,18 @@ class Main(QMainWindow, Ui_MainWindow):
             self.redraw_all_stat_var()
 
     def stat_var_table_change(self, item):
-        if self.updating or not item:
+        if self.updating.lock or not item:
             return
-        self.updating = True
-        row = self.stat_var_table.currentRow()
-        col = self.stat_var_table.currentColumn()
-        stat_var = self.static_vars[row]
+        with self.updating:
+            row = self.stat_var_table.currentRow()
+            col = self.stat_var_table.currentColumn()
+            stat_var = self.static_vars[row]
 
-        if col == 0:
-            stat_var.set_name(item.text())
-        elif col == 1:
-            stat_var.set_default(item.text())
-        self.redraw_stat_var_row(row)
-        self.updating = False
+            if col == 0:
+                stat_var.set_name(item.text())
+            elif col == 1:
+                stat_var.set_default(item.text())
+            self.redraw_stat_var_row(row)
 
     def redraw_all_stat_var(self):
         for i in range(self.stat_var_table.rowCount()):
@@ -354,58 +364,9 @@ class Main(QMainWindow, Ui_MainWindow):
     def update_dynamic_var_send(self, state):
         self.current_dyn_var.set_send(state)
 
-
-
     def save_preset_handler(self):
         with open(str(self.preset_path.text()) + str(self.save_name.text()) + '.txt', 'w+') as f:
-            inst_format = '{:>40}; {:>20}; {:>10}; {:>20}; {:>75}; {:>75}\n'
-            dynamic_var_format = '{:>40}; {:>20}; {:>20}; {:>20}; {:>15}; {:>6}\n'
-            static_var_format = '{:>40}; {:>20}\n'
-            f.write(inst_format.format(
-                '===Instructions===       Name',
-                'Duration',
-                'Stepsize',
-                'Digital Pins',
-                'Analog Outputs',
-                'Novatech Outputs'
-            ))
-            for i in self.instructions:
-                f.write(inst_format.format(
-                    i.name,
-                    i.duration,
-                    i.stepsize,
-                    i.digital_pins,
-                    ''.join([x + ' ' for x in i.analog_functions]),
-                    ''.join([x + ' ' for x in i.novatech_functions])
-                ))
-            f.write('\n')
-            f.write(dynamic_var_format.format(
-                '===Dynamic Process Variables===    Name',
-                'Start',
-                'End',
-                'Default',
-                'Logarithmic',
-                'Send'
-            ))
-            for i in self.dynamic_vars:
-                f.write(dynamic_var_format.format(
-                    i.name,
-                    i.start,
-                    i.end,
-                    i.default,
-                    int(i.logarithmic),
-                    int(i.send)
-                ))
-            f.write('\n')
-            f.write(static_var_format.format(
-                '===Static Process Variables===    Name',
-                'Value'
-            ))
-            for i in self.static_vars:
-                f.write(static_var_format.format(
-                    i.name,
-                    i.default,
-                ))
+            f.write(self.procedure.get_save_info())
 
     def populate_load_presets(self):
         # remove items currently in the dropdown list
@@ -423,21 +384,20 @@ class Main(QMainWindow, Ui_MainWindow):
         parsers = iter([self.parse_inst_line, self.parse_dyn_var_line, self.parse_stat_var_line])
         parser = parsers.next()
         with open(str(self.preset_path.text()) + str(self.load_combo.currentText()), 'r') as f:
-            self.instructions = []
-            self.dynamic_vars = []
-            self.static_vars = []
+            self.procedure = Procedure(self.programmer)
+            self.instructions = self.procedure.instructions
+            self.dynamic_vars = self.procedure.dynamic_variables
+            self.static_vars = self.procedure.static_variables
             f.next()
-            for i in f:
-                i = [x.strip() for x in i.split(';')]
-                if i == ['']:
+            for line in f:
+                line = [x.strip() for x in line.split(';')]
+                if line == ['']:
                     f.next()
                     parser = parsers.next()
                     continue
 
-                parser(i)
+                parser(line)
             self.redraw_all()
-            self.redraw_all_dyn_var()
-            self.redraw_all_stat_var()
 
     def parse_inst_line(self, line):
         inst = Instruction()
@@ -472,7 +432,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.static_vars.append(stat_var)
 
     def start_device_handler(self):
-        self.programmer.start_device_handler()
+        self.procedure.start_sequence()
 
     def stop_device_handler(self):
         self.programmer.stop_device_handler()
@@ -480,6 +440,15 @@ class Main(QMainWindow, Ui_MainWindow):
     def program_device_handler(self):
         self.programmer.program_device_handler(self.instructions)
 
+class UpdateLock(object):
+    def __init__(self, lock):
+        self.lock = lock
+
+    def __enter__(self):
+        self.lock = True
+
+    def __exit__(self, *args):
+        self.lock = False
 
 
 class TableCheckBox(QWidget):
@@ -487,18 +456,27 @@ class TableCheckBox(QWidget):
         QWidget.__init__(self, *args, **kwargs)
         cb = QCheckBox()
         cb.setCheckState(bool_to_checkstate(state))
-        cb.setStyleSheet("""
-            QCheckBox::indicator { width: 23px; height: 20px;} 
-            QCheckBox::indicator:checked {background-color: #55FF00;}
-            QCheckBox::indicator:checked:hover {background-color: #33DD00;}
-            QCheckBox::indicator:unchecked {background-color: #DDDDDD;}
-            QCheckBox::indicator:unchecked:hover {background-color: #AAAAAA;}
-        """)
-        cb.clicked.connect(lambda: gui.update_digital(row,col))
+        if (col - 2) % 8 < 4:
+            cb.setStyleSheet("""
+                QCheckBox::indicator { width: 20px; height: 20px;} 
+                QCheckBox::indicator:checked {background-color: #55FF00;}
+                QCheckBox::indicator:checked:hover {background-color: #BBFF00;}
+                QCheckBox::indicator:unchecked {background-color: #DDDDDD;}
+                QCheckBox::indicator:unchecked:hover {background-color: #AAAAAA;}
+            """)
+        else:
+            cb.setStyleSheet("""
+                QCheckBox::indicator { width: 20px; height: 20px;} 
+                QCheckBox::indicator:checked {background-color: #33DD00;}
+                QCheckBox::indicator:checked:hover {background-color: #AAFF00;}
+                QCheckBox::indicator:unchecked {background-color: #CCCCCC;}
+                QCheckBox::indicator:unchecked:hover {background-color: #999999;}
+            """)
+        cb.clicked.connect(lambda: gui.update_digital(row, col))
         layout = QHBoxLayout(self)
         layout.addWidget(cb)
         layout.setAlignment(QtCore.Qt.AlignCenter)
-        layout.setContentsMargins(5, 0, 0, 0)
+        layout.setContentsMargins(2, 0, 0, 0)
 
 def bool_to_checkstate(bool):
     if bool:
@@ -509,7 +487,6 @@ def bool_to_checkstate(bool):
 # **************************************************************************************
 if __name__ == '__main__':
     app1 = QApplication(sys.argv)
-    app1.setStyle('cleanlooks')
     main = Main()
     main.show()
     app1.exec_()
