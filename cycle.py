@@ -24,7 +24,7 @@ def parse_function(string, variables):
         key = result.group(1)
         args = [parse_arg(x.strip(), variables) for x in result.group(2).split(',')]
         if any([arg is None for arg in args]):
-            print('not a valid function: ', string)
+            print('Invalid function syntax: ', string)
             return None, None
         return key, args
 
@@ -32,7 +32,7 @@ def parse_function(string, variables):
     if args:
         return 'const', args
 
-    print('not a valid function: ', string)
+    print('Invalid function syntax: ', string)
     return None, None
 
 def parse_arg(arg, variables):
@@ -127,15 +127,11 @@ class Cycle(object):
         for func_string in func_strings:
             key, args = parse_function(func_string, self.variables)
 
-            if key == 'const':
-                funcs.append((constFunc, args))
-            elif key == 'ramp':
-                funcs.append((linFunc, args))
-            elif key == 'sin':
-               funcs.append((sinFunc, args))
-            elif key == 'exp':
-                funcs.append((expFunc, args))
+            if key in FUNCTION_MAP:
+                func = FUNCTION_MAP.get(key)
+                funcs.append((func, args))
             else:
+                print key, 'is not a valid function key'
                 return
 
         duration = float(inst.duration)

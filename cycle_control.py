@@ -7,8 +7,11 @@ except:
     from PyQt5 import QtCore
     from PyQt5.QtWidgets import *
     from PyQt5.QtGui import QCursor
-import sys
+
 import os
+import sys
+from threading import Thread
+
 
 from programmer import *
 from instruction import *
@@ -26,7 +29,9 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.programmer = Programmer()
 
-        self.procedure = Procedure(self.programmer)
+        self.procedure = Procedure(self.programmer, self)
+
+        self.plotter = CyclePlotter(self)
 
         self.instructions = self.procedure.instructions
         self.dynamic_vars = self.procedure.dynamic_variables
@@ -62,6 +67,8 @@ class Main(QMainWindow, Ui_MainWindow):
         self.new_stat_var.clicked.connect(self.new_stat_var_handler)
         self.delete_stat_var.clicked.connect(self.remove_current_stat_var)
 
+        self.steps_num.valueChanged.connect(self.update_procedure_steps)
+
         # ------ Other GUI ---------
         self.preset_path.textChanged.connect(self.populate_load_presets)
         self.preset_path.setText(os.path.join(ROOT_PATH, "presets\\"))
@@ -71,7 +78,6 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.start_device_button.clicked.connect(self.start_device_handler)
         self.stop_device_button.clicked.connect(self.stop_device_handler)
-        self.program_device_button.clicked.connect(self.program_device_handler)
 
     def dataTableMenu(self, table):
         menu = QMenu()
@@ -86,6 +92,10 @@ class Main(QMainWindow, Ui_MainWindow):
             self.insert_inst_handler(self.clip_inst_number(row+1))
         if selectedItem == del_row:
             self.remove_inst_handler(self.clip_inst_number(row))
+
+    def update_procedure_steps(self, val):
+        self.procedure.steps = int(val)
+        self.set_stepsize_text()
 
     def insert_inst_handler(self, loc):
         if self.updating.lock:
@@ -188,11 +198,13 @@ class Main(QMainWindow, Ui_MainWindow):
         self.insert_digital_grid_row(row)
         self.insert_analog_table_row(row)
         self.insert_novatech_table_row(row)
+        self.set_total_time()
 
     def remove_row(self,row):
         self.digital_table.removeRow(row)
         self.analog_table.removeRow(row)
         self.novatech_table.removeRow(row)
+        self.set_total_time()
 
     def insert_analog_table_row(self, row):
         self.analog_table.insertRow(row)
@@ -312,6 +324,7 @@ class Main(QMainWindow, Ui_MainWindow):
             self.dyn_var_default.setText(str(self.current_dyn_var.default))
             self.dyn_var_log.setCheckState(bool_to_checkstate(self.current_dyn_var.logarithmic))
             self.dyn_var_send.setCheckState(bool_to_checkstate(self.current_dyn_var.send))
+            self.set_stepsize_text()
 
     def new_dyn_var_handler(self):
         num = len(self.dynamic_vars)
@@ -349,10 +362,12 @@ class Main(QMainWindow, Ui_MainWindow):
     def update_dynamic_var_start(self):
         self.current_dyn_var.set_start(str(self.dyn_var_start.text()))
         self.dyn_var_start.setText(self.current_dyn_var.start)
+        self.set_stepsize_text()
 
     def update_dynamic_var_end(self):
         self.current_dyn_var.set_end(str(self.dyn_var_end.text()))
         self.dyn_var_end.setText(self.current_dyn_var.end)
+        self.set_stepsize_text()
 
     def update_dynamic_var_default(self):
         self.current_dyn_var.set_default(str(self.dyn_var_default.text()))
@@ -360,9 +375,36 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def update_dynamic_var_log(self, state):
         self.current_dyn_var.set_log(state)
+        self.set_stepsize_text()
 
     def update_dynamic_var_send(self, state):
         self.current_dyn_var.set_send(state)
+
+    def set_stepsize_text(self):
+        try:
+            stepsize = self.current_dyn_var.get_stepsize(self.procedure.steps)
+            self.dyn_var_stepsize.setText(str(stepsize))
+        except ValueError:
+            self.dyn_var_stepsize.setText('NaN')
+        except ZeroDivisionError:
+            self.dyn_var_stepsize.setText('NaN')
+
+    def set_total_time(self):
+        self.cycle_length.setText(str(self.procedure.get_total_time()))
+
+    def update_prog(self, val):
+        self.cycle_progress.setValue(val)
+
+    def compute_step_size(self, dyn_var):
+        start = float(dyn_var.start)
+        end = float(dyn_var.end)
+        steps = self.procedure.steps
+        if self.procedure.steps > 1:
+            steps -= 1
+        if dyn_var.logarithmic:
+            return pow(end / start, 1.0 / float(steps))
+        return (end - start) / float(steps)
+
 
     def save_preset_handler(self):
         with open(str(self.preset_path.text()) + str(self.save_name.text()) + '.txt', 'w+') as f:
@@ -384,7 +426,7 @@ class Main(QMainWindow, Ui_MainWindow):
         parsers = iter([self.parse_inst_line, self.parse_dyn_var_line, self.parse_stat_var_line])
         parser = parsers.next()
         with open(str(self.preset_path.text()) + str(self.load_combo.currentText()), 'r') as f:
-            self.procedure = Procedure(self.programmer)
+            self.procedure = Procedure(self.programmer, self)
             self.instructions = self.procedure.instructions
             self.dynamic_vars = self.procedure.dynamic_variables
             self.static_vars = self.procedure.static_variables
@@ -432,13 +474,13 @@ class Main(QMainWindow, Ui_MainWindow):
         self.static_vars.append(stat_var)
 
     def start_device_handler(self):
-        self.procedure.start_sequence()
+        thread = procedure_thread(self.procedure)
+        thread.start()
 
     def stop_device_handler(self):
-        self.programmer.stop_device_handler()
+        print 'Stopping sequence'
+        self.procedure.activated = False
 
-    def program_device_handler(self):
-        self.programmer.program_device_handler(self.instructions)
 
 class UpdateLock(object):
     def __init__(self, lock):
@@ -483,6 +525,16 @@ def bool_to_checkstate(bool):
         return QtCore.Qt.Checked
     return QtCore.Qt.Unchecked
 
+
+class procedure_thread(Thread):
+    def __init__(self, procedure):
+        Thread.__init__(self)
+        self.procedure = procedure
+
+    def run(self):
+        init = time.time()
+        self.procedure.start_sequence()
+        print 'Total sequence time: ', time.time() - init
 
 # **************************************************************************************
 if __name__ == '__main__':

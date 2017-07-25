@@ -36,10 +36,6 @@ class Programmer(object):
         self.cycle = cycle
         self.cycle.create_waveforms()
 
-        plotter = CyclePlotter(self.cycle)
-        plotter.plot_digital_channels(0, 1, 2)
-        plotter.plot_analog_channels(0,1,2)
-
         self.program_pulse_blaster()
         self.program_NI()
         self.program_novatech()
@@ -99,8 +95,10 @@ class Programmer(object):
                     #convert V to dBm: dBm = 10 * log_10 ( V_RMS^2 / (50ohm * 1mW) )
 
     def start_device_handler(self):
-        thread = cycle_thread(self.taskHandle)
+        time = self.cycle.analog_domain[-1]
+        thread = cycle_thread(self.taskHandle, time)
         thread.start()
+        thread.join()
 
     def stop_device_handler(self):
         DAQmxStopTask(self.taskHandle)
@@ -108,9 +106,10 @@ class Programmer(object):
 
 
 class cycle_thread(threading.Thread):
-    def __init__(self, taskHandle):
+    def __init__(self, taskHandle, time):
         threading.Thread.__init__(self)
         self.taskHandle = taskHandle
+        self.time = time
 
     def run(self):
         print('activated')
@@ -118,9 +117,8 @@ class cycle_thread(threading.Thread):
         pb_start()
 
         DAQmxStartTask(self.taskHandle)
-        DAQmxWaitUntilTaskDone(self.taskHandle, 1.0) #seconds
+        DAQmxWaitUntilTaskDone(self.taskHandle, self.time) #seconds
         DAQmxStopTask(self.taskHandle)
 
         pb_stop()
-        time.sleep(0.2)
         print('Cycle complete. Waiting for next start command..')

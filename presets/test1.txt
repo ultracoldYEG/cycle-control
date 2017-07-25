@@ -1,6 +1,6 @@
            ===Instructions===       Name;             Duration;   Stepsize;               Digital Pins;                                                              Analog Outputs;                                                            Novatech Outputs
                                      MOT;                  1.0;        0.1;   100010010000000000000000;                                                            0 1 0 0 0 0 0 0 ;                                                    0 0 0 0 0 0 0 0 0 0 0 0 
-                                     MOT;                 15.0;      0.001;   100010010000000000000000;                                                            0 1 0 0 0 0 0 0 ;                                                    0 0 0 0 0 0 0 0 0 0 0 0 
+                                     MOT;                 15.0;      0.001;   100010010000000000000000;                                              ramp(0,testvar) 1 0 0 0 0 0 0 ;                                                    0 0 0 0 0 0 0 0 0 0 0 0 
                                 molasses;                 0.02;      0.001;   100010110000000000000000;                                                        0.4 0.5 0 0 0 0 0 0 ;                                                    0 0 0 0 0 0 0 0 0 0 0 0 
                                 opt pump;               0.0006;      0.001;   100010110000000000000000;                                                         0 -1.5 0 0 0 0 0 0 ;                                                    0 0 0 0 0 0 0 0 0 0 0 0 
                                      MT1;                0.001;      0.001;   100000110000000000000000;                                                      -0.2 0.75 0 0 0 0 0 0 ;                                                    0 0 0 0 0 0 0 0 0 0 0 0 
@@ -30,7 +30,7 @@
  ===Dynamic Process Variables===    Name;                Start;                  End;              Default;     Logarithmic;   Send
                                   test 1;                  2.0;                  4.0;                  5.0;               1;      1
                       dynamic variable 1;                    2;                  0.0;                  0.0;               1;      1
-                                 testvar;                  4.0;                  5.0;                  3.0;               1;      1
+                                 testvar;                    3;                   10;                  3.0;               1;      1
 
   ===Static Process Variables===    Name;                Value
                                testvario;               345345

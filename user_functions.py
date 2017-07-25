@@ -30,3 +30,10 @@ def expFunc(domain, end, A, B, C):
     for i in domain:
         result.append(amplitude * math.exp(i / C) + offset)
     return result
+
+FUNCTION_MAP = {
+    'const': constFunc,
+    'ramp': linFunc,
+    'sin': sinFunc,
+    'exp': expFunc,
+}

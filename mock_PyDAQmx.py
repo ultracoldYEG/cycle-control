@@ -96,6 +96,7 @@ def DAQmxWriteAnalogF64(taskHandle, num_samples, autostart, timeout, sort_type, 
     taskHandle.timeout = timeout
     taskHandle.sort_type = sort_type
     taskHandle.instructions = analog_data
+    print 'DAQmx programmed'
 
 def DAQmxWaitUntilTaskDone(taskHandle, delay):
     if taskHandle.lock:
