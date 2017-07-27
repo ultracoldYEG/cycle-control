@@ -7,11 +7,11 @@ except:
     from PyQt5 import QtCore
     from PyQt5.QtWidgets import *
     from PyQt5.QtGui import QCursor
+    from PyQt5.QtCore import QThread, pyqtSignal
 
 import os
 import sys
-from threading import Thread
-
+import copy
 
 from programmer import *
 from instruction import *
@@ -31,18 +31,16 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.procedure = Procedure(self.programmer, self)
 
-        self.plotter = CyclePlotter(self)
+        self.proc_params = ProcedureParameters()
 
-        self.instructions = self.procedure.instructions
-        self.dynamic_vars = self.procedure.dynamic_variables
-        self.static_vars = self.procedure.static_variables
+        self.plotter = CyclePlotter(self)
 
         #------ Instruction GUI ---------
         for table in [self.digital_table, self.analog_table, self.novatech_table]:
             table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.digital_table.customContextMenuRequested.connect(lambda event: self.dataTableMenu(self.digital_table))
-        self.analog_table.customContextMenuRequested.connect(lambda event: self.dataTableMenu(self.analog_table))
-        self.novatech_table.customContextMenuRequested.connect(lambda event: self.dataTableMenu(self.novatech_table))
+        self.digital_table.customContextMenuRequested.connect(lambda event: self.data_menu(self.digital_table))
+        self.analog_table.customContextMenuRequested.connect(lambda event: self.data_menu(self.analog_table))
+        self.novatech_table.customContextMenuRequested.connect(lambda event: self.data_menu(self.novatech_table))
 
         self.digital_table.itemChanged.connect(self.digital_table_change)
         self.novatech_table.itemChanged.connect(self.novatech_table_change)
@@ -67,7 +65,6 @@ class Main(QMainWindow, Ui_MainWindow):
         self.new_stat_var.clicked.connect(self.new_stat_var_handler)
         self.delete_stat_var.clicked.connect(self.remove_current_stat_var)
 
-        self.steps_num.valueChanged.connect(self.update_procedure_steps)
 
         # ------ Other GUI ---------
         self.preset_path.textChanged.connect(self.populate_load_presets)
@@ -78,8 +75,17 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.start_device_button.clicked.connect(self.start_device_handler)
         self.stop_device_button.clicked.connect(self.stop_device_handler)
+        self.update_globals_button.clicked.connect(self.update_globals_handler)
 
-    def dataTableMenu(self, table):
+        self.worker = gui_thread(self.procedure)
+        self.worker.prog_update.connect(self.update_prog)
+        self.worker.text_update.connect(self.update_cycle_label)
+
+        self.steps_num.valueChanged.connect(self.update_steps_num)
+        self.persistent_cb.stateChanged.connect(self.update_persistent)
+        self.cycle_delay.valueChanged.connect(self.update_cycle_delay)
+
+    def data_menu(self, table):
         menu = QMenu()
         new_row_pre = menu.addAction("Insert new instruction before")
         new_row_aft = menu.addAction("Insert new instruction after")
@@ -93,10 +99,6 @@ class Main(QMainWindow, Ui_MainWindow):
         if selectedItem == del_row:
             self.remove_inst_handler(self.clip_inst_number(row))
 
-    def update_procedure_steps(self, val):
-        self.procedure.steps = int(val)
-        self.set_stepsize_text()
-
     def insert_inst_handler(self, loc):
         if self.updating.lock:
             return
@@ -104,20 +106,20 @@ class Main(QMainWindow, Ui_MainWindow):
             inst = Instruction()
             inst.set_name('Instruction ' + str(loc+1))
 
-            self.instructions.insert(loc, inst)
+            self.proc_params.instructions.insert(loc, inst)
             self.insert_row(loc)
 
     def remove_inst_handler(self, loc):
-        if self.updating.lock or not self.instructions:
+        if self.updating.lock or not self.proc_params.instructions:
             return
         with self.updating:
-            del self.instructions[loc]
+            del self.proc_params.instructions[loc]
             self.remove_row(loc)
 
     def clip_inst_number(self, num):
-        #limits the number between 0 and the number of instructions
-        if num < 0 or num >= len(self.instructions):
-            return len(self.instructions)
+        # limits the number between 0 and the number of instructions
+        if num < 0 or num >= len(self.proc_params.instructions):
+            return len(self.proc_params.instructions)
         return num
 
     def analog_table_change(self):
@@ -127,7 +129,7 @@ class Main(QMainWindow, Ui_MainWindow):
             row = self.analog_table.currentRow()
             col = self.analog_table.currentColumn()
             item = self.analog_table.item(row, col)
-            inst = self.instructions[row]
+            inst = self.proc_params.instructions[row]
 
             if item:
                 item = item.text()
@@ -147,7 +149,7 @@ class Main(QMainWindow, Ui_MainWindow):
         with self.updating:
             row = self.novatech_table.currentRow()
             col = self.novatech_table.currentColumn()
-            inst = self.instructions[row]
+            inst = self.proc_params.instructions[row]
 
             if item:
                 item = item.text()
@@ -168,10 +170,10 @@ class Main(QMainWindow, Ui_MainWindow):
         with self.updating:
             row = self.digital_table.currentRow()
             col = self.digital_table.currentColumn()
-            inst = self.instructions[row]
+            inst = self.proc_params.instructions[row]
 
             if item:
-                item=item.text()
+                item = item.text()
                 if col == 0:
                     inst.set_name(item)
                 elif col == 1:
@@ -182,25 +184,27 @@ class Main(QMainWindow, Ui_MainWindow):
         self.redraw_all_inst()
         self.redraw_all_dyn_var()
         self.redraw_all_stat_var()
+        self.set_stepsize_text()
+        self.set_proc_param_items()
 
     def redraw_all_inst(self):
         with self.updating:
             for i in range(self.digital_table.rowCount()):
                 self.remove_row(0)
-            for i in range(len(self.instructions)):
+            for i in range(len(self.proc_params.instructions)):
                 self.insert_row(i)
 
     def redraw_row(self, row):
         self.remove_row(row)
         self.insert_row(row)
 
-    def insert_row(self,row):
+    def insert_row(self, row):
         self.insert_digital_grid_row(row)
         self.insert_analog_table_row(row)
         self.insert_novatech_table_row(row)
         self.set_total_time()
 
-    def remove_row(self,row):
+    def remove_row(self, row):
         self.digital_table.removeRow(row)
         self.analog_table.removeRow(row)
         self.novatech_table.removeRow(row)
@@ -208,42 +212,44 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def insert_analog_table_row(self, row):
         self.analog_table.insertRow(row)
+        inst = self.proc_params.instructions[row]
         for col in range((self.analog_table.columnCount())):
             if col == 0:
-                new_string = self.instructions[row].name
+                new_string = inst.name
 
             elif col == 1:
-                new_string = str(self.instructions[row].duration)
+                new_string = inst.duration
 
             elif col == 2:
-                new_string = str(self.instructions[row].stepsize)
+                new_string = inst.stepsize
 
             else:
-                new_string = str(self.instructions[row].analog_functions[col - 3])
+                new_string = inst.analog_functions[col - 3]
 
             self.analog_table.setItem(row, col, QTableWidgetItem(new_string))
             self.analog_table.setRowHeight(row, 25)
 
     def insert_novatech_table_row(self, row):
         self.novatech_table.insertRow(row)
+        inst = self.proc_params.instructions[row]
         for col in range((self.novatech_table.columnCount())):
             if col == 0:
-                new_string = self.instructions[row].name
+                new_string = inst.name
 
             elif col == 1:
-                new_string = str(self.instructions[row].duration)
+                new_string = inst.duration
 
             elif col == 2:
-                new_string = str(self.instructions[row].stepsize)
+                new_string = inst.stepsize
 
             else:
-                new_string = str(self.instructions[row].novatech_functions[col - 3])
+                new_string = inst.novatech_functions[col - 3]
 
             self.novatech_table.setItem(row, col, QTableWidgetItem(new_string))
             self.novatech_table.setRowHeight(row, 25)
 
     def insert_digital_grid_row(self, row):
-        inst = self.instructions[row]
+        inst = self.proc_params.instructions[row]
         self.digital_table.insertRow(row)
 
         for col in range(self.digital_table.columnCount()):
@@ -259,27 +265,28 @@ class Main(QMainWindow, Ui_MainWindow):
             self.digital_table.setRowHeight(row, 25)
 
     def update_digital(self, r, c):
-        c-=2
-        digits = self.instructions[r].digital_pins
+        inst = self.proc_params.instructions[r]
+        c -= 2
+        digits = inst.digital_pins
         if digits[c] == '1':
-            self.instructions[r].set_digital_pins(digits[:c] + '0' + digits[c+1:])
+            inst.set_digital_pins(digits[:c] + '0' + digits[c+1:])
         else:
-            self.instructions[r].set_digital_pins(digits[:c] + '1' + digits[c+1:])
+            inst.set_digital_pins(digits[:c] + '1' + digits[c+1:])
 
     def new_stat_var_handler(self):
         if self.updating.lock:
             return
         with self.updating:
-            num = len(self.static_vars)
+            num = len(self.proc_params.static_variables)
             stat_var = StaticProcessVariable()
             stat_var.name = 'static variable '+str(num)
-            self.static_vars.append(stat_var)
+            self.proc_params.static_variables.append(stat_var)
             self.insert_stat_var_row(num)
 
     def remove_current_stat_var(self):
-        if self.static_vars:
+        if self.proc_params.static_variables:
             row = self.stat_var_table.currentRow()
-            del self.static_vars[row]
+            del self.proc_params.static_variables[row]
             self.redraw_all_stat_var()
 
     def stat_var_table_change(self, item):
@@ -288,7 +295,7 @@ class Main(QMainWindow, Ui_MainWindow):
         with self.updating:
             row = self.stat_var_table.currentRow()
             col = self.stat_var_table.currentColumn()
-            stat_var = self.static_vars[row]
+            stat_var = self.proc_params.static_variables[row]
 
             if col == 0:
                 stat_var.set_name(item.text())
@@ -296,10 +303,20 @@ class Main(QMainWindow, Ui_MainWindow):
                 stat_var.set_default(item.text())
             self.redraw_stat_var_row(row)
 
+    def update_current_dyn_vars(self, dict):
+        for i in range(self.current_vars_table.rowCount()):
+            self.current_vars_table.removeRow(0)
+        row = 0
+        for name, value in dict.iteritems():
+            self.current_vars_table.insertRow(row)
+            self.current_vars_table.setItem(row, 0, QTableWidgetItem(name))
+            self.current_vars_table.setItem(row, 1, QTableWidgetItem(str(value)))
+            row += 1
+
     def redraw_all_stat_var(self):
         for i in range(self.stat_var_table.rowCount()):
             self.stat_var_table.removeRow(0)
-        for i in range(len(self.static_vars)):
+        for i in range(len(self.proc_params.static_variables)):
             self.insert_stat_var_row(i)
 
     def redraw_stat_var_row(self, row):
@@ -307,7 +324,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.insert_stat_var_row(row)
 
     def insert_stat_var_row(self, row):
-        stat_var = self.static_vars[row]
+        stat_var = self.proc_params.static_variables[row]
         self.stat_var_table.insertRow(row)
         self.stat_var_table.setItem(row, 0, QTableWidgetItem(stat_var.name))
         self.stat_var_table.setItem(row, 1, QTableWidgetItem(str(stat_var.default)))
@@ -316,8 +333,8 @@ class Main(QMainWindow, Ui_MainWindow):
         self.stat_var_table.removeRow(row)
 
     def select_dyn_var(self, row):
-        if self.dynamic_vars:
-            self.current_dyn_var = self.dynamic_vars[row]
+        if self.proc_params.dynamic_variables:
+            self.current_dyn_var = self.proc_params.dynamic_variables[row]
             self.dyn_var_name.setText(self.current_dyn_var.name)
             self.dyn_var_start.setText(str(self.current_dyn_var.start))
             self.dyn_var_end.setText(str(self.current_dyn_var.end))
@@ -327,16 +344,16 @@ class Main(QMainWindow, Ui_MainWindow):
             self.set_stepsize_text()
 
     def new_dyn_var_handler(self):
-        num = len(self.dynamic_vars)
+        num = len(self.proc_params.dynamic_variables)
         dyn_var = DynamicProcessVariable()
         dyn_var.name = 'dynamic variable '+str(num)
-        self.dynamic_vars.append(dyn_var)
+        self.proc_params.dynamic_variables.append(dyn_var)
         self.insert_dyn_var(num)
 
     def redraw_all_dyn_var(self):
         for i in range(self.dyn_var_list.count()):
             self.dyn_var_list.takeItem(0)
-        for i in range(len(self.dynamic_vars)):
+        for i in range(len(self.proc_params.dynamic_variables)):
             self.insert_dyn_var(i)
 
     def redraw_dyn_var_row(self, row):
@@ -344,14 +361,14 @@ class Main(QMainWindow, Ui_MainWindow):
         self.dyn_var_list.takeItem(row + 1)
 
     def insert_dyn_var(self, row):
-        dyn_var = self.dynamic_vars[row]
+        dyn_var = self.proc_params.dynamic_variables[row]
         self.dyn_var_list.insertItem(row, QListWidgetItem(dyn_var.name))
         self.dyn_var_list.setCurrentRow(row)
 
     def remove_current_dyn_var(self):
-        if self.dynamic_vars:
+        if self.proc_params.dynamic_variables:
             row = self.dyn_var_list.currentRow()
-            del self.dynamic_vars[row]
+            del self.proc_params.dynamic_variables[row]
             self.redraw_all_dyn_var()
             self.dyn_var_list.setCurrentRow(row)
 
@@ -380,35 +397,54 @@ class Main(QMainWindow, Ui_MainWindow):
     def update_dynamic_var_send(self, state):
         self.current_dyn_var.set_send(state)
 
+    def update_steps_num(self, val):
+        self.proc_params.steps = int(val)
+        self.set_stepsize_text()
+
+    def update_persistent(self, state):
+        self.proc_params.persistent = state
+
+    def update_cycle_delay(self, val):
+        self.proc_params.delay = val
+
     def set_stepsize_text(self):
         try:
-            stepsize = self.current_dyn_var.get_stepsize(self.procedure.steps)
+            stepsize = self.current_dyn_var.get_stepsize(self.proc_params.steps)
             self.dyn_var_stepsize.setText(str(stepsize))
         except ValueError:
             self.dyn_var_stepsize.setText('NaN')
         except ZeroDivisionError:
             self.dyn_var_stepsize.setText('NaN')
+        except AttributeError:
+            self.dyn_var_stepsize.setText('NaN')
 
     def set_total_time(self):
-        self.cycle_length.setText(str(self.procedure.get_total_time()))
+        self.cycle_length.setText(str(self.proc_params.get_total_time()))
+
+    def set_proc_param_items(self):
+        self.cycle_delay.setValue(self.proc_params.delay)
+        self.persistent_cb.setCheckState(bool_to_checkstate(self.proc_params.persistent))
+        self.steps_num.setValue(self.proc_params.steps)
 
     def update_prog(self, val):
         self.cycle_progress.setValue(val)
 
+    def update_cycle_label(self, text):
+        self.cycle_label.setText(text)
+
     def compute_step_size(self, dyn_var):
         start = float(dyn_var.start)
         end = float(dyn_var.end)
-        steps = self.procedure.steps
-        if self.procedure.steps > 1:
+        steps = self.proc_params.steps
+        if self.proc_params.steps > 1:
             steps -= 1
         if dyn_var.logarithmic:
             return pow(end / start, 1.0 / float(steps))
         return (end - start) / float(steps)
 
-
     def save_preset_handler(self):
-        with open(str(self.preset_path.text()) + str(self.save_name.text()) + '.txt', 'w+') as f:
-            f.write(self.procedure.get_save_info())
+        fp = str(self.preset_path.text()) + str(self.save_name.text()) + '.txt'
+        self.proc_params.save_to_file(fp)
 
     def populate_load_presets(self):
         # remove items currently in the dropdown list
@@ -423,59 +459,23 @@ class Main(QMainWindow, Ui_MainWindow):
             print('failed to load presets')
 
     def load_preset_handler(self):
-        parsers = iter([self.parse_inst_line, self.parse_dyn_var_line, self.parse_stat_var_line])
-        parser = parsers.next()
-        with open(str(self.preset_path.text()) + str(self.load_combo.currentText()), 'r') as f:
-            self.procedure = Procedure(self.programmer, self)
-            self.instructions = self.procedure.instructions
-            self.dynamic_vars = self.procedure.dynamic_variables
-            self.static_vars = self.procedure.static_variables
-            f.next()
-            for line in f:
-                line = [x.strip() for x in line.split(';')]
-                if line == ['']:
-                    f.next()
-                    parser = parsers.next()
-                    continue
+        fp = str(self.preset_path.text()) + str(self.load_combo.currentText())
+        self.proc_params.load_from_file(fp)
 
-                parser(line)
-            self.redraw_all()
-
-    def parse_inst_line(self, line):
-        inst = Instruction()
-
-        inst.set_name(line[0])
-        inst.set_duration(line[1])
-        inst.set_stepsize(line[2])
-        inst.set_digital_pins(line[3])
-        inst.analog_functions = line[4].split(' ')
-        inst.novatech_functions = line[5].split(' ')
-
-        self.instructions.append(inst)
-
-    def parse_dyn_var_line(self, line):
-        dyn_var = DynamicProcessVariable()
-
-        dyn_var.set_name(line[0])
-        dyn_var.set_start(line[1])
-        dyn_var.set_end(line[2])
-        dyn_var.set_default(line[3])
-        dyn_var.set_log(line[4])
-        dyn_var.set_send(line[5])
-
-        self.dynamic_vars.append(dyn_var)
-
-    def parse_stat_var_line(self, line):
-        stat_var = StaticProcessVariable()
-
-        stat_var.set_name(line[0])
-        stat_var.set_default(line[1])
-
-        self.static_vars.append(stat_var)
+        self.redraw_all()
 
     def start_device_handler(self):
+        if self.procedure.running:
+            print 'Already running'
+            return
+        self.procedure.activated = True
+        self.procedure.parameters = copy.deepcopy(self.proc_params)
         thread = procedure_thread(self.procedure)
         thread.start()
+
+    def update_globals_handler(self):
+        print 'Updated globals'
+        self.procedure.parameters = copy.deepcopy(self.proc_params)
 
     def stop_device_handler(self):
         print 'Stopping sequence'
@@ -532,9 +532,26 @@ class procedure_thread(Thread):
         self.procedure = procedure
 
     def run(self):
-        init = time.time()
         self.procedure.start_sequence()
-        print 'Total sequence time: ', time.time() - init
+
+
+class gui_thread(QtCore.QThread):
+    prog_update = QtCore.pyqtSignal(object)
+    text_update = QtCore.pyqtSignal(object)
+
+    def __init__(self, procedure):
+        QtCore.QThread.__init__(self, parent=None)
+        self.procedure = procedure
+
+    def run(self):
+        total = self.procedure.parameters.get_total_time()
+        init = time.time()
+        self.text_update.emit('Cycle {}/{}'.format(self.procedure.current_step, self.procedure.parameters.steps))
+        while (time.time() - init) < total:
+            val = math.ceil((time.time() - init) / total * 1000.0)
+            self.prog_update.emit(int(val))
+            time.sleep(0.01)
+        self.prog_update.emit(1000)
 
 # **************************************************************************************
 if __name__ == '__main__':

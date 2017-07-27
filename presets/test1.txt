@@ -37,3 +37,6 @@
                                    test2;             9.11e-31
                        static variable 3;                    5
                                      new;                   25
+
+    ===Sequencing Parameters===    Steps;           Persistent
+                                       1;                    0; 3

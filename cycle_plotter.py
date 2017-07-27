@@ -71,7 +71,7 @@ class CyclePlotter(object):
     def update_data(self):
         self.fig.clf()
         self.ax = self.fig.add_subplot(111)
-        self.cycle = Cycle(self.gui.procedure.instructions, self.gui.procedure.get_variables_for_step(self.step))
+        self.cycle = Cycle(self.gui.proc_params.instructions, self.gui.proc_params.get_cycle_variables(self.step))
         self.cycle.create_waveforms()
 
         results = []

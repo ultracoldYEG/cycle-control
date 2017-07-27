@@ -95,30 +95,15 @@ class Programmer(object):
                     #convert V to dBm: dBm = 10 * log_10 ( V_RMS^2 / (50ohm * 1mW) )
 
     def start_device_handler(self):
-        time = self.cycle.analog_domain[-1]
-        thread = cycle_thread(self.taskHandle, time)
-        thread.start()
-        thread.join()
+        print('activated')
+        pb_start()
+
+        DAQmxStartTask(self.taskHandle)
+        DAQmxWaitUntilTaskDone(self.taskHandle, self.cycle.analog_domain[-1])  # seconds
+        DAQmxStopTask(self.taskHandle)
+
+        pb_stop()
 
     def stop_device_handler(self):
         DAQmxStopTask(self.taskHandle)
         pb_stop()
-
-
-class cycle_thread(threading.Thread):
-    def __init__(self, taskHandle, time):
-        threading.Thread.__init__(self)
-        self.taskHandle = taskHandle
-        self.time = time
-
-    def run(self):
-        print('activated')
-
-        pb_start()
-
-        DAQmxStartTask(self.taskHandle)
-        DAQmxWaitUntilTaskDone(self.taskHandle, self.time) #seconds
-        DAQmxStopTask(self.taskHandle)
-
-        pb_stop()
-        print('Cycle complete. Waiting for next start command..')

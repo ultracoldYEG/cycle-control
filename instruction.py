@@ -1,54 +1,185 @@
 from cycle import *
 from threading import Thread
+
 import time
+import math
 
 class Procedure(object):
     def __init__(self, programmer, gui):
+        self.parameters = ProcedureParameters()
+        self.programmer = programmer
+        self.gui = gui
+        self.current_step = 0
+        self.activated = False
+        self.running = False
+
+    def start_sequence(self):
+        instructions = self.parameters.instructions
+        steps = self.parameters.steps
+        self.running = True
+        if len(instructions) <= 1:
+            print('Put in more instructions')
+            return
+        self.current_step = 0
+        while self.activated:
+            self.current_step += 1
+            if self.current_step <= steps:
+                variables = self.parameters.get_cycle_variables(self.current_step-1)
+                self.gui.update_current_dyn_vars(self.parameters.get_dynamic_variables(self.current_step-1))
+                cycle = Cycle(instructions, variables)
+                self.start_cycle(cycle)
+            elif self.parameters.persistent:
+                variables = self.parameters.get_default_variables()
+                cycle = Cycle(instructions, variables)
+                self.start_cycle(cycle)
+            else:
+                break
+            time.sleep(self.parameters.delay)
+        self.running = False
+
+    def start_cycle(self, cycle):
+        thread = cycle_thread(self.programmer, cycle)
+        self.gui.worker.procedure = self
+        self.gui.worker.start()
+        thread.start()
+        thread.join()
+
+
+class ProcedureParameters(object):
+    def __init__(self):
         self.instructions = []
         self.static_variables = []
         self.dynamic_variables = []
-        self.programmer = programmer
-        self.gui = gui
         self.steps = 1
-        self.activated = False
         self.persistent = False
+        self.delay = 0.0
 
-    def start_sequence(self):
-        self.activated = True
-        if len(self.instructions) <= 1:
-            print('Put in more instructions')
-            return
-        n = 0
-        while self.activated and n < 10:
-            n += 1
-            for i in range(self.steps):
-                if not self.activated:
-                    print 'STOPPED'
-                    break
-                variables = self.get_cycle_variables(i)
-                cycle = Cycle(self.instructions, variables)
-                thread = cycle_thread(self.programmer, cycle)
-                thread.start()
-                thread.join()
-            variables = self.get_default_variables()
-            if self.persistent:
-                cycle = Cycle(self.instructions, variables)
-                thread = cycle_thread(self.programmer, cycle)
-                thread.start()
-                thread.join()
-            else:
-                break
+    def save_to_file(self, fp):
+        inst_format = '{:>40}; {:>20}; {:>10}; {:>26}; {:>75}; {:>75}\n'
+        dynamic_var_format = '{:>40}; {:>20}; {:>20}; {:>20}; {:>15}; {:>6}\n'
+        static_var_format = '{:>40}; {:>20}\n'
+        seq_param_format = '{:>40}; {:>11}; {:>8}\n'
+        with open(fp, 'w+') as f:
+            f.write(inst_format.format(
+                '===Instructions===       Name',
+                'Duration',
+                'Stepsize',
+                'Digital Pins',
+                'Analog Outputs',
+                'Novatech Outputs'
+            ))
+            for i in self.instructions:
+                f.write(inst_format.format(
+                    i.name,
+                    i.duration,
+                    i.stepsize,
+                    i.digital_pins,
+                    ''.join([x + ' ' for x in i.analog_functions]),
+                    ''.join([x + ' ' for x in i.novatech_functions])
+                ))
+            f.write('\n')
+            f.write(dynamic_var_format.format(
+                '===Dynamic Process Variables===    Name',
+                'Start',
+                'End',
+                'Default',
+                'Logarithmic',
+                'Send'
+            ))
+            for i in self.dynamic_variables:
+                f.write(dynamic_var_format.format(
+                    i.name,
+                    i.start,
+                    i.end,
+                    i.default,
+                    int(i.logarithmic),
+                    int(i.send)
+                ))
+            f.write('\n')
+            f.write(static_var_format.format('===Static Process Variables===    Name', 'Value'))
+            for i in self.static_variables:
+                f.write(static_var_format.format(i.name, i.default))
+            f.write('\n')
+            f.write(seq_param_format.format('===Sequencing Parameters===    Steps', 'Persistent', 'Delay'))
+            f.write(seq_param_format.format(self.steps, int(self.persistent), self.delay))
+
+    def load_from_file(self, fp):
+        parsers = iter([
+            self.parse_inst_line,
+            self.parse_dyn_var_line,
+            self.parse_stat_var_line,
+            self.parse_seq_param_line
+        ])
+        parser = parsers.next()
+        with open(fp, 'rb') as f:
+            self.instructions = []
+            self.static_variables = []
+            self.dynamic_variables = []
+            self.steps = 1
+            self.persistent = False
+            self.delay = 0.0
+            f.next()
+            for line in f:
+                line = [x.strip() for x in line.split(';')]
+                if line == ['']:
+                    f.next()
+                    parser = parsers.next()
+                    continue
+
+                parser(line)
+
+    def parse_inst_line(self, line):
+        inst = Instruction()
+        inst.set_name(line[0])
+        inst.set_duration(line[1])
+        inst.set_stepsize(line[2])
+        inst.set_digital_pins(line[3])
+        inst.analog_functions = line[4].split(' ')
+        inst.novatech_functions = line[5].split(' ')
+
+        self.instructions.append(inst)
+
+    def parse_dyn_var_line(self, line):
+        dyn_var = DynamicProcessVariable()
+        dyn_var.set_name(line[0])
+        dyn_var.set_start(line[1])
+        dyn_var.set_end(line[2])
+        dyn_var.set_default(line[3])
+        dyn_var.set_log(line[4])
+        dyn_var.set_send(line[5])
+
+        self.dynamic_variables.append(dyn_var)
+
+    def parse_stat_var_line(self, line):
+        stat_var = StaticProcessVariable()
+        stat_var.set_name(line[0])
+        stat_var.set_default(line[1])
+
+        self.static_variables.append(stat_var)
+
+    def parse_seq_param_line(self, line):
+
+        self.steps = float(line[0])
+        self.persistent = bool(line[1])
+        self.delay = float(line[2])
+
+    def get_static_variables(self):
+        return {x.name: float(x.default) for x in self.static_variables}
+
+    def get_dynamic_variables(self, step):
+        return {x.name: self.get_dynamic_variable_value(step, x) for x in self.dynamic_variables if x.send}
+
+    def get_dynamic_default_variables(self):
+        return {x.name: float(x.default) for x in self.dynamic_variables}
 
     def get_cycle_variables(self, step):
-        variables = {x.name: float(x.default) for x in self.static_variables}
-        for var in self.dynamic_variables:
-            variables[var.name] = self.get_dynamic_variable_value(step, var)
+        variables = self.get_static_variables()
+        variables.update(self.get_dynamic_variables(step))
         return variables
 
     def get_default_variables(self):
-        variables = {x.name: float(x.default) for x in self.static_variables}
-        for var in self.dynamic_variables:
-            variables[var.name] = float(var.default)
+        variables = self.get_static_variables()
+        variables.update(self.get_dynamic_default_variables())
         return variables
 
     def get_dynamic_variable_value(self, step, dyn_var):
@@ -60,60 +191,6 @@ class Procedure(object):
 
     def get_total_time(self):
         return sum([float(x.duration) for x in self.instructions])
-
-    def get_save_info(self):
-        result = ''
-        inst_format = '{:>40}; {:>20}; {:>10}; {:>26}; {:>75}; {:>75}\n'
-        dynamic_var_format = '{:>40}; {:>20}; {:>20}; {:>20}; {:>15}; {:>6}\n'
-        static_var_format = '{:>40}; {:>20}\n'
-        result += (inst_format.format(
-            '===Instructions===       Name',
-            'Duration',
-            'Stepsize',
-            'Digital Pins',
-            'Analog Outputs',
-            'Novatech Outputs'
-        ))
-        for i in self.instructions:
-            result += (inst_format.format(
-                i.name,
-                i.duration,
-                i.stepsize,
-                i.digital_pins,
-                ''.join([x + ' ' for x in i.analog_functions]),
-                ''.join([x + ' ' for x in i.novatech_functions])
-            ))
-        result += ('\n')
-        result += (dynamic_var_format.format(
-            '===Dynamic Process Variables===    Name',
-            'Start',
-            'End',
-            'Default',
-            'Logarithmic',
-            'Send'
-        ))
-        for i in self.dynamic_variables:
-            result += (dynamic_var_format.format(
-                i.name,
-                i.start,
-                i.end,
-                i.default,
-                int(i.logarithmic),
-                int(i.send)
-            ))
-        result += ('\n')
-        result += (static_var_format.format(
-            '===Static Process Variables===    Name',
-            'Value'
-        ))
-        for i in self.static_variables:
-            result += (static_var_format.format(
-                i.name,
-                i.default,
-            ))
-        return result
-
-
 class Instruction(object):
     # this will contain all the information in a single instruction (a single row in the program)
     def __init__(self):
@@ -224,9 +301,6 @@ class cycle_thread(Thread):
         self.cycle = cycle
 
     def run(self):
-        print('activated')
         self.programmer.program_device_handler(self.cycle)
         self.programmer.start_device_handler()
         print('Cycle complete. Waiting for next start command..')
-
-
