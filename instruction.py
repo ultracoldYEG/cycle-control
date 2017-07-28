@@ -11,31 +11,32 @@ class Procedure(object):
         self.gui = gui
         self.current_step = 0
         self.activated = False
-        self.running = False
+        self.run_lock = RunningLock()
+        self.cycle_number = 0
 
     def start_sequence(self):
         instructions = self.parameters.instructions
         steps = self.parameters.steps
-        self.running = True
-        if len(instructions) <= 1:
-            print('Put in more instructions')
-            return
-        self.current_step = 0
-        while self.activated:
-            self.current_step += 1
-            if self.current_step <= steps:
-                variables = self.parameters.get_cycle_variables(self.current_step-1)
-                self.gui.update_current_dyn_vars(self.parameters.get_dynamic_variables(self.current_step-1))
-                cycle = Cycle(instructions, variables)
-                self.start_cycle(cycle)
-            elif self.parameters.persistent:
-                variables = self.parameters.get_default_variables()
-                cycle = Cycle(instructions, variables)
-                self.start_cycle(cycle)
-            else:
-                break
-            time.sleep(self.parameters.delay)
-        self.running = False
+        with self.run_lock:
+            if len(instructions) <= 1:
+                print('Put in more instructions')
+                return
+            self.current_step = 0
+            while self.activated:
+                self.current_step += 1
+                self.cycle_number += 1
+                if self.current_step <= steps:
+                    variables = self.parameters.get_cycle_variables(self.current_step - 1)
+                    self.gui.update_current_dyn_vars(self.parameters.get_dynamic_variables(self.current_step - 1))
+                    cycle = Cycle(instructions, variables)
+                    self.start_cycle(cycle)
+                elif self.parameters.persistent:
+                    variables = self.parameters.get_default_variables()
+                    cycle = Cycle(instructions, variables)
+                    self.start_cycle(cycle)
+                else:
+                    break
+                time.sleep(self.parameters.delay)
 
     def start_cycle(self, cycle):
         thread = cycle_thread(self.programmer, cycle)
@@ -145,8 +146,8 @@ class ProcedureParameters(object):
         dyn_var.set_start(line[1])
         dyn_var.set_end(line[2])
         dyn_var.set_default(line[3])
-        dyn_var.set_log(line[4])
-        dyn_var.set_send(line[5])
+        dyn_var.set_log(int(line[4]))
+        dyn_var.set_send(int(line[5]))
 
         self.dynamic_variables.append(dyn_var)
 
@@ -160,7 +161,7 @@ class ProcedureParameters(object):
     def parse_seq_param_line(self, line):
 
         self.steps = float(line[0])
-        self.persistent = bool(line[1])
+        self.persistent = bool(int(line[1]))
         self.delay = float(line[2])
 
     def get_static_variables(self):
@@ -304,3 +305,13 @@ class cycle_thread(Thread):
         self.programmer.program_device_handler(self.cycle)
         self.programmer.start_device_handler()
         print('Cycle complete. Waiting for next start command..')
+
+class RunningLock(object):
+    def __init__(self):
+        self.running = False
+
+    def __enter__(self):
+        self.running = True
+
+    def __exit__(self, *args):
+        self.running = False

@@ -55,6 +55,7 @@ class CyclePlotter(object):
         self.gui.gridLayout_10.addWidget(self.gui.novatech_channel_combo, 2, 2)
 
         self.gui.plot_button.clicked.connect(self.update_data)
+        self.gui.cycle_plot_number.valueChanged.connect(self.update_step)
 
         for i in range(3, self.gui.digital_table.columnCount()):
             name = self.gui.digital_table.horizontalHeaderItem(i).text()
@@ -68,10 +69,19 @@ class CyclePlotter(object):
             name = self.gui.novatech_table.horizontalHeaderItem(i).text()
             self.add_checkable_combo_item(self.gui.novatech_channel_combo, name, i - 3)
 
+    def update_step(self, val):
+        if val <= self.gui.proc_params.steps:
+            self.step = val
+            self.update_data()
+
     def update_data(self):
+        if not len(self.gui.proc_params.instructions):
+            print('Put in more instructions')
+            return
         self.fig.clf()
         self.ax = self.fig.add_subplot(111)
-        self.cycle = Cycle(self.gui.proc_params.instructions, self.gui.proc_params.get_cycle_variables(self.step))
+        self.ax.grid()
+        self.cycle = Cycle(self.gui.proc_params.instructions, self.gui.proc_params.get_cycle_variables(self.step - 1))
         self.cycle.create_waveforms()
 
         results = []

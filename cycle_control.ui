@@ -192,15 +192,21 @@ QPushButton:pressed {background-color: rgb(255, 170,170)}</string>
              </item>
              <item>
               <layout class="QGridLayout" name="gridLayout_11">
-               <item row="1" column="1">
-                <widget class="QLineEdit" name="lineEdit_2">
-                 <property name="enabled">
-                  <bool>true</bool>
+               <item row="1" column="2">
+                <widget class="QLineEdit" name="file_number">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>75</width>
+                   <height>16777215</height>
+                  </size>
                  </property>
                 </widget>
-               </item>
-               <item row="1" column="2">
-                <widget class="QLineEdit" name="lineEdit_3"/>
                </item>
                <item row="0" column="2">
                 <widget class="QLabel" name="label_16">
@@ -230,6 +236,13 @@ QPushButton:pressed {background-color: rgb(255, 170,170)}</string>
                  </property>
                 </widget>
                </item>
+               <item row="1" column="1">
+                <widget class="QLabel" name="current_file">
+                 <property name="text">
+                  <string/>
+                 </property>
+                </widget>
+               </item>
               </layout>
              </item>
             </layout>
@@ -249,7 +262,7 @@ QPushButton:pressed {background-color: rgb(255, 170,170)}</string>
       <item>
        <widget class="QTabWidget" name="tabWidget_2">
         <property name="currentIndex">
-         <number>1</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="tab">
          <attribute name="title">
@@ -281,21 +294,27 @@ QPushButton:pressed {background-color: rgb(255, 170,170)}</string>
                 <layout class="QVBoxLayout" name="verticalLayout_12">
                  <item>
                   <layout class="QGridLayout" name="gridLayout_3">
-                   <item row="1" column="0">
-                    <widget class="QPushButton" name="save_button">
-                     <property name="text">
-                      <string>Save Preset</string>
-                     </property>
-                    </widget>
+                   <item row="3" column="1">
+                    <widget class="QLineEdit" name="preset_path"/>
                    </item>
-                   <item row="0" column="0">
+                   <item row="1" column="0">
                     <widget class="QPushButton" name="load_button">
                      <property name="text">
-                      <string>Load Preset</string>
+                      <string>Load Procedure</string>
                      </property>
                     </widget>
                    </item>
                    <item row="1" column="1">
+                    <widget class="QComboBox" name="load_combo"/>
+                   </item>
+                   <item row="2" column="0">
+                    <widget class="QPushButton" name="save_button">
+                     <property name="text">
+                      <string>Save Procedure</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
                     <widget class="QLineEdit" name="save_name">
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -305,18 +324,19 @@ QPushButton:pressed {background-color: rgb(255, 170,170)}</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="1">
-                    <widget class="QComboBox" name="load_combo"/>
-                   </item>
-                   <item row="2" column="0">
+                   <item row="3" column="0">
                     <widget class="QLabel" name="label_2">
                      <property name="text">
                       <string>Path:</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="1">
-                    <widget class="QLineEdit" name="preset_path"/>
+                   <item row="0" column="0">
+                    <widget class="QPushButton" name="new_procedure_button">
+                     <property name="text">
+                      <string>New Procedure</string>
+                     </property>
+                    </widget>
                    </item>
                   </layout>
                  </item>
@@ -369,10 +389,13 @@ QPushButton:pressed {background-color: rgb(255, 170,170)}</string>
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>
                 </property>
+                <property name="sizeType">
+                 <enum>QSizePolicy::Fixed</enum>
+                </property>
                 <property name="sizeHint" stdset="0">
                  <size>
                   <width>20</width>
-                  <height>40</height>
+                  <height>20</height>
                  </size>
                 </property>
                </spacer>
@@ -448,10 +471,13 @@ QPushButton:pressed {background-color: rgb(255, 170,170)}</string>
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>
                 </property>
+                <property name="sizeType">
+                 <enum>QSizePolicy::Fixed</enum>
+                </property>
                 <property name="sizeHint" stdset="0">
                  <size>
                   <width>20</width>
-                  <height>40</height>
+                  <height>20</height>
                  </size>
                 </property>
                </spacer>
@@ -494,10 +520,13 @@ QPushButton:pressed {background-color: rgb(255, 170,170)}</string>
                 <property name="orientation">
                  <enum>Qt::Vertical</enum>
                 </property>
+                <property name="sizeType">
+                 <enum>QSizePolicy::Fixed</enum>
+                </property>
                 <property name="sizeHint" stdset="0">
                  <size>
                   <width>20</width>
-                  <height>40</height>
+                  <height>20</height>
                  </size>
                 </property>
                </spacer>
@@ -1157,6 +1186,30 @@ QPushButton:pressed {background-color: rgb(255, 170,170)}</string>
                  <string>Plot</string>
                 </property>
                </widget>
+              </item>
+              <item row="0" column="3">
+               <layout class="QHBoxLayout" name="horizontalLayout_4">
+                <item>
+                 <widget class="QLabel" name="label_14">
+                  <property name="text">
+                   <string>Cycle Number</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QSpinBox" name="cycle_plot_number">
+                  <property name="wrapping">
+                   <bool>false</bool>
+                  </property>
+                  <property name="minimum">
+                   <number>1</number>
+                  </property>
+                  <property name="maximum">
+                   <number>1000</number>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </item>
              </layout>
             </item>

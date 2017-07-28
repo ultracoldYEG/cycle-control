@@ -56,6 +56,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.dyn_var_default.editingFinished.connect(self.update_dynamic_var_default)
         self.dyn_var_log.stateChanged.connect(self.update_dynamic_var_log)
         self.dyn_var_send.stateChanged.connect(self.update_dynamic_var_send)
+        self.current_dyn_var = None
 
         self.dyn_var_list.currentRowChanged.connect(self.select_dyn_var)
         self.new_dyn_var.clicked.connect(self.new_dyn_var_handler)
@@ -72,6 +73,7 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.save_button.clicked.connect(self.save_preset_handler)
         self.load_button.clicked.connect(self.load_preset_handler)
+        self.new_procedure_button.clicked.connect(self.new_procedure_handler)
 
         self.start_device_button.clicked.connect(self.start_device_handler)
         self.stop_device_button.clicked.connect(self.stop_device_handler)
@@ -80,6 +82,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.worker = gui_thread(self.procedure)
         self.worker.prog_update.connect(self.update_prog)
         self.worker.text_update.connect(self.update_cycle_label)
+        self.worker.file_num_update.connect(self.update_file_num)
 
         self.steps_num.valueChanged.connect(self.update_steps_num)
         self.persistent_cb.stateChanged.connect(self.update_persistent)
@@ -373,29 +376,35 @@ class Main(QMainWindow, Ui_MainWindow):
             self.dyn_var_list.setCurrentRow(row)
 
     def update_dynamic_var_name(self, name):
-        self.current_dyn_var.set_name(name)
-        self.redraw_dyn_var_row(self.dyn_var_list.currentRow())
+        if self.current_dyn_var:
+            self.current_dyn_var.set_name(name)
+            self.redraw_dyn_var_row(self.dyn_var_list.currentRow())
 
     def update_dynamic_var_start(self):
-        self.current_dyn_var.set_start(str(self.dyn_var_start.text()))
-        self.dyn_var_start.setText(self.current_dyn_var.start)
-        self.set_stepsize_text()
+        if self.current_dyn_var:
+            self.current_dyn_var.set_start(str(self.dyn_var_start.text()))
+            self.dyn_var_start.setText(self.current_dyn_var.start)
+            self.set_stepsize_text()
 
     def update_dynamic_var_end(self):
-        self.current_dyn_var.set_end(str(self.dyn_var_end.text()))
-        self.dyn_var_end.setText(self.current_dyn_var.end)
-        self.set_stepsize_text()
+        if self.current_dyn_var:
+            self.current_dyn_var.set_end(str(self.dyn_var_end.text()))
+            self.dyn_var_end.setText(self.current_dyn_var.end)
+            self.set_stepsize_text()
 
     def update_dynamic_var_default(self):
-        self.current_dyn_var.set_default(str(self.dyn_var_default.text()))
-        self.dyn_var_default.setText(self.current_dyn_var.default)
+        if self.current_dyn_var:
+            self.current_dyn_var.set_default(str(self.dyn_var_default.text()))
+            self.dyn_var_default.setText(self.current_dyn_var.default)
 
     def update_dynamic_var_log(self, state):
-        self.current_dyn_var.set_log(state)
-        self.set_stepsize_text()
+        if self.current_dyn_var:
+            self.current_dyn_var.set_log(state)
+            self.set_stepsize_text()
 
     def update_dynamic_var_send(self, state):
-        self.current_dyn_var.set_send(state)
+        if self.current_dyn_var:
+            self.current_dyn_var.set_send(state)
 
     def update_steps_num(self, val):
         self.proc_params.steps = int(val)
@@ -411,11 +420,7 @@ class Main(QMainWindow, Ui_MainWindow):
         try:
             stepsize = self.current_dyn_var.get_stepsize(self.proc_params.steps)
             self.dyn_var_stepsize.setText(str(stepsize))
-        except ValueError:
-            self.dyn_var_stepsize.setText('NaN')
-        except ZeroDivisionError:
-            self.dyn_var_stepsize.setText('NaN')
-        except AttributeError:
+        except (ValueError, ZeroDivisionError, AttributeError):
             self.dyn_var_stepsize.setText('NaN')
 
     def set_total_time(self):
@@ -432,6 +437,9 @@ class Main(QMainWindow, Ui_MainWindow):
     def update_cycle_label(self, text):
         self.cycle_label.setText(text)
 
+    def update_file_num(self, val):
+        self.file_number.setText(str(val))
+
     def compute_step_size(self, dyn_var):
         start = float(dyn_var.start)
         end = float(dyn_var.end)
@@ -441,10 +449,6 @@ class Main(QMainWindow, Ui_MainWindow):
         if dyn_var.logarithmic:
             return pow(end / start, 1.0 / float(steps))
         return (end - start) / float(steps)
-
-    def save_preset_handler(self):
-        fp = str(self.preset_path.text()) + str(self.save_name.text()) + '.txt'
-        self.proc_params.save_to_file(fp)
 
     def populate_load_presets(self):
         # remove items currently in the dropdown list
@@ -458,14 +462,24 @@ class Main(QMainWindow, Ui_MainWindow):
         except:
             print('failed to load presets')
 
+    def save_preset_handler(self):
+        fp = str(self.preset_path.text()) + str(self.save_name.text()) + '.txt'
+        self.proc_params.save_to_file(fp)
+        self.current_file.setText(str(self.save_name.text()) + '.txt')
+
     def load_preset_handler(self):
         fp = str(self.preset_path.text()) + str(self.load_combo.currentText())
         self.proc_params.load_from_file(fp)
+        self.current_file.setText(str(self.load_combo.currentText()))
+        self.redraw_all()
 
+    def new_procedure_handler(self):
+        self.proc_params = ProcedureParameters()
+        self.current_file.setText('Untitled')
         self.redraw_all()
 
     def start_device_handler(self):
-        if self.procedure.running:
+        if self.procedure.run_lock.running:
             print 'Already running'
             return
         self.procedure.activated = True
@@ -538,6 +552,7 @@ class procedure_thread(Thread):
 class gui_thread(QtCore.QThread):
     prog_update = QtCore.pyqtSignal(object)
     text_update = QtCore.pyqtSignal(object)
+    file_num_update = QtCore.pyqtSignal(object)
 
     def __init__(self, procedure):
         QtCore.QThread.__init__(self, parent=None)
@@ -547,6 +562,7 @@ class gui_thread(QtCore.QThread):
         total = self.procedure.parameters.get_total_time()
         init = time.time()
         self.text_update.emit('Cycle {}/{}'.format(self.procedure.current_step, self.procedure.parameters.steps))
+        self.file_num_update.emit(self.procedure.cycle_number)
         while (time.time() - init) < total:
             val = math.ceil((time.time() - init) / total * 1000.0)
             self.prog_update.emit(int(val))
