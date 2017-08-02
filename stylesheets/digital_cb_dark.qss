@@ -1,0 +1,5 @@
+QCheckBox::indicator { width: 20px; height: 20px;}
+QCheckBox::indicator:checked {background-color: #33DD00;}
+QCheckBox::indicator:checked:hover {background-color: #AAFF00;}
+QCheckBox::indicator:unchecked {background-color: #CCCCCC;}
+QCheckBox::indicator:unchecked:hover {background-color: #999999;}

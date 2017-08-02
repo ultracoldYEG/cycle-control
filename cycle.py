@@ -1,5 +1,6 @@
 from user_functions import *
 import re
+import copy
 
 FUNCTION_REGEX = r'^(\w+)\((.*)\)$'
 ANALOG_PIN = 2
@@ -46,7 +47,7 @@ def parse_arg(arg, variables):
 
 class Cycle(object):
     def __init__(self, instructions, variables):
-        self.instructions = instructions
+        self.instructions = [x for x in instructions if parse_arg(x.duration, variables) > 0.0]
         self.variables = variables
 
         self.analog_domain = []

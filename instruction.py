@@ -2,7 +2,6 @@ from cycle import *
 from threading import Thread
 
 import time
-import math
 
 class Procedure(object):
     def __init__(self, programmer, gui):
@@ -160,7 +159,7 @@ class ProcedureParameters(object):
 
     def parse_seq_param_line(self, line):
 
-        self.steps = float(line[0])
+        self.steps = int(line[0])
         self.persistent = bool(int(line[1]))
         self.delay = float(line[2])
 
@@ -192,6 +191,7 @@ class ProcedureParameters(object):
 
     def get_total_time(self):
         return sum([float(x.duration) for x in self.instructions])
+
 class Instruction(object):
     # this will contain all the information in a single instruction (a single row in the program)
     def __init__(self):

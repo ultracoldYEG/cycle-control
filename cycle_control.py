@@ -7,14 +7,12 @@ except:
     from PyQt5 import QtCore
     from PyQt5.QtWidgets import *
     from PyQt5.QtGui import QCursor
-    from PyQt5.QtCore import QThread, pyqtSignal
 
-import os
 import sys
-import copy
 
 from programmer import *
 from instruction import *
+from helpers import *
 
 ROOT_PATH = os.getcwd()
 
@@ -87,6 +85,9 @@ class Main(QMainWindow, Ui_MainWindow):
         self.steps_num.valueChanged.connect(self.update_steps_num)
         self.persistent_cb.stateChanged.connect(self.update_persistent)
         self.cycle_delay.valueChanged.connect(self.update_cycle_delay)
+
+        self.detect_com_button.clicked.connect(self.update_com_ports)
+        self.com_ports = []
 
     def data_menu(self, table):
         menu = QMenu()
@@ -440,15 +441,8 @@ class Main(QMainWindow, Ui_MainWindow):
     def update_file_num(self, val):
         self.file_number.setText(str(val))
 
-    def compute_step_size(self, dyn_var):
-        start = float(dyn_var.start)
-        end = float(dyn_var.end)
-        steps = self.proc_params.steps
-        if self.proc_params.steps > 1:
-            steps -= 1
-        if dyn_var.logarithmic:
-            return pow(end / start, 1.0 / float(steps))
-        return (end - start) / float(steps)
+    def update_com_ports(self):
+        self.com_ports = serial_ports()
 
     def populate_load_presets(self):
         # remove items currently in the dropdown list
@@ -513,31 +507,14 @@ class TableCheckBox(QWidget):
         cb = QCheckBox()
         cb.setCheckState(bool_to_checkstate(state))
         if (col - 2) % 8 < 4:
-            cb.setStyleSheet("""
-                QCheckBox::indicator { width: 20px; height: 20px;} 
-                QCheckBox::indicator:checked {background-color: #55FF00;}
-                QCheckBox::indicator:checked:hover {background-color: #BBFF00;}
-                QCheckBox::indicator:unchecked {background-color: #DDDDDD;}
-                QCheckBox::indicator:unchecked:hover {background-color: #AAAAAA;}
-            """)
+            cb.setStyleSheet(load_stylesheet('digital_cb_light.qss'))
         else:
-            cb.setStyleSheet("""
-                QCheckBox::indicator { width: 20px; height: 20px;} 
-                QCheckBox::indicator:checked {background-color: #33DD00;}
-                QCheckBox::indicator:checked:hover {background-color: #AAFF00;}
-                QCheckBox::indicator:unchecked {background-color: #CCCCCC;}
-                QCheckBox::indicator:unchecked:hover {background-color: #999999;}
-            """)
+            cb.setStyleSheet(load_stylesheet('digital_cb_dark.qss'))
         cb.clicked.connect(lambda: gui.update_digital(row, col))
         layout = QHBoxLayout(self)
         layout.addWidget(cb)
         layout.setAlignment(QtCore.Qt.AlignCenter)
         layout.setContentsMargins(2, 0, 0, 0)
-
-def bool_to_checkstate(bool):
-    if bool:
-        return QtCore.Qt.Checked
-    return QtCore.Qt.Unchecked
 
 
 class procedure_thread(Thread):
