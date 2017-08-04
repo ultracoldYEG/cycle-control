@@ -11,6 +11,7 @@ except:
 import sys
 
 from programmer import *
+from hardware_types import *
 from instruction import *
 from helpers import *
 
@@ -24,6 +25,10 @@ class Main(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
         self.updating = UpdateLock(False)
+
+        self.hardware = HardwareSetup()
+        self.hardware.load_hardware_file(os.path.join(ROOT_PATH, 'hardware_presets', 'default.txt'))
+        self.hardware.save_hardware_file(os.path.join(ROOT_PATH, 'hardware_presets', 'default.txt'))
 
         self.programmer = Programmer()
 
@@ -65,7 +70,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.delete_stat_var.clicked.connect(self.remove_current_stat_var)
 
 
-        # ------ Other GUI ---------
+        # ------ File Management GUI ---------
         self.preset_path.textChanged.connect(self.populate_load_presets)
         self.preset_path.setText(os.path.join(ROOT_PATH, "presets\\"))
 
@@ -73,6 +78,12 @@ class Main(QMainWindow, Ui_MainWindow):
         self.load_button.clicked.connect(self.load_preset_handler)
         self.new_procedure_button.clicked.connect(self.new_procedure_handler)
 
+        self.load_hardware_button.clicked.connect(self.load_hardware)
+
+        self.detect_com_button.clicked.connect(self.update_com_ports)
+        self.com_ports = []
+
+        # ------ Header GUI ---------
         self.start_device_button.clicked.connect(self.start_device_handler)
         self.stop_device_button.clicked.connect(self.stop_device_handler)
         self.update_globals_button.clicked.connect(self.update_globals_handler)
@@ -86,8 +97,6 @@ class Main(QMainWindow, Ui_MainWindow):
         self.persistent_cb.stateChanged.connect(self.update_persistent)
         self.cycle_delay.valueChanged.connect(self.update_cycle_delay)
 
-        self.detect_com_button.clicked.connect(self.update_com_ports)
-        self.com_ports = []
 
     def data_menu(self, table):
         menu = QMenu()
@@ -466,6 +475,21 @@ class Main(QMainWindow, Ui_MainWindow):
         self.proc_params.load_from_file(fp)
         self.current_file.setText(str(self.load_combo.currentText()))
         self.redraw_all()
+
+    def load_hardware(self):
+        self.redraw_analog_hardware()
+
+    def redraw_analog_hardware(self):
+        root = self.analog_hardware_tree.invisibleRootItem()
+        for board in self.hardware.ni_boards:
+            board_root = QTreeWidgetItem(root, [board.board_identifier])
+            board_root.setData(1, QtCore.Qt.ItemIsEditable, board.board_identifier)
+            board_root.setFlags(board_root.flags() | QtCore.Qt.ItemIsEditable)
+            for i, channel in enumerate(board.channels):
+                item = QTreeWidgetItem(board_root, [str(i)])
+                item.setData(1, QtCore.Qt.ItemIsEditable, channel.label)
+                item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+                item.setCheckState(0, bool_to_checkstate(channel.enabled))
 
     def new_procedure_handler(self):
         self.proc_params = ProcedureParameters()

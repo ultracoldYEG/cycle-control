@@ -388,7 +388,7 @@ QPushButton:pressed {background-color: rgb(255, 170,170)}</string>
                     </widget>
                    </item>
                    <item row="1" column="0">
-                    <widget class="QPushButton" name="pushButton_3">
+                    <widget class="QPushButton" name="load_hardware_button">
                      <property name="text">
                       <string>Load Hardware Setup</string>
                      </property>
@@ -441,7 +441,7 @@ QPushButton:pressed {background-color: rgb(255, 170,170)}</string>
                     </widget>
                    </item>
                    <item row="2" column="1">
-                    <widget class="QTreeWidget" name="treeWidget">
+                    <widget class="QTreeWidget" name="analog_hardware_tree">
                      <column>
                       <property name="text">
                        <string>Virtual Channel</string>
@@ -464,178 +464,9 @@ QPushButton:pressed {background-color: rgb(255, 170,170)}</string>
                      </column>
                      <column>
                       <property name="text">
-                       <string>Enable</string>
-                      </property>
-                     </column>
-                     <column>
-                      <property name="text">
                        <string>Scaling</string>
                       </property>
                      </column>
-                     <item>
-                      <property name="text">
-                       <string>Board 0</string>
-                      </property>
-                      <property name="checkState">
-                       <enum>Unchecked</enum>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                      <item>
-                       <property name="text">
-                        <string>0</string>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>1</string>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>2</string>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>3</string>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>4</string>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>5</string>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>6</string>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                      <item>
-                       <property name="text">
-                        <string>7</string>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </item>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>Board 1</string>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                     </item>
                     </widget>
                    </item>
                   </layout>

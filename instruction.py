@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from cycle import *
 from threading import Thread
 
@@ -194,11 +195,13 @@ class ProcedureParameters(object):
 
 class Instruction(object):
     # this will contain all the information in a single instruction (a single row in the program)
-    def __init__(self):
+    def __init__(self, hardware_setup):
+        self.hardware_setup = hardware_setup
         self.name = ''
         self.duration = 0.0
         self.stepsize = 0.0
 
+        #self.digital_pins = OrderedDict([(board.board_number, '0' * 24) for board in self.hardware_setup.pulseblasters])
         self.digital_pins = '0' * 24
         self.analog_functions = ['0'] * 8
         self.novatech_functions = ['0'] * 12
