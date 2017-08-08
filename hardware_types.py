@@ -1,6 +1,3 @@
-
-
-
 class HardwareSetup(object):
     def __init__(self):
         self.pulseblasters = []
@@ -8,6 +5,9 @@ class HardwareSetup(object):
         self.novatechs = []
 
     def load_hardware_file(self, fp):
+        self.pulseblasters = []
+        self.ni_boards = []
+        self.novatechs = []
         parsers = {
             "PULSEBLASTER": self.parse_pb,
             "NI BOARD": self.parse_ni,
@@ -15,18 +15,17 @@ class HardwareSetup(object):
         }
         with open(fp, 'r') as f:
             for line in f:
-                line = line.split(';')
-                if line[0].strip() in parsers:
+                line = [x.strip() for x in line.split(';')]
+                if line[0] in parsers:
                     f.next()
-                    parser = parsers.get(line[0].strip())
-                    parser(f, line[1].strip())
+                    parser = parsers.get(line[0])
+                    parser(f, line[1])
                     continue
 
     def parse_pb(self, f, num):
-        pb = PulseBlasterBoard(int(num))
+        pb = PulseBlasterBoard(str(num))
         self.pulseblasters.append(pb)
         for line in f:
-            print line.strip()
             if not line.strip():
                 return
             line = [x.strip() for x in line.split(';')]
@@ -37,7 +36,6 @@ class HardwareSetup(object):
         ni = NIBoard(str(id))
         self.ni_boards.append(ni)
         for line in f:
-            print line.strip()
             if not line.strip():
                 return
             line = [x.strip() for x in line.split(';')]
@@ -47,12 +45,12 @@ class HardwareSetup(object):
             channel.min = float(line[3])
             channel.max = float(line[4])
             channel.scaling = str(line[5])
+            print line[2]
 
     def parse_nova(self, f, port):
         nova = NovatechBoard(str(port))
         self.novatechs.append(nova)
         for line in f:
-            print line.strip()
             if not line.strip():
                 return
             line = [x.strip() for x in line.split(';')]
@@ -67,7 +65,7 @@ class HardwareSetup(object):
             nova_format = ' {:>8}; {:>8}\n'
 
             for board in self.pulseblasters:
-                f.write('\nPULSEBLASTER; {0}\n'.format(board.board_number))
+                f.write('\nPULSEBLASTER; {0}\n'.format(board.board_identifier))
                 f.write(pb_format.format('Channel', 'Enabled'))
                 for i, channel in enumerate(board.channels):
                     f.write(pb_format.format(i, int(channel.enabled)))
@@ -86,42 +84,52 @@ class HardwareSetup(object):
                     ))
 
             for board in self.novatechs:
-                f.write('\nNOVATECH; {0}\n'.format(board.com_port))
+                f.write('\nNOVATECH; {0}\n'.format(board.board_identifier))
                 f.write(nova_format.format('Channel', 'Enabled'))
                 for i, channel in enumerate(board.channels):
                     f.write(nova_format.format(i, int(channel.enabled)))
 
-
-class PulseBlasterBoard(object):
-    def __init__(self, num):
-        self.board_number = num
-        self.analog_pin = 23
-        self.novatech_pin = 24
-        self.channels = [PulseBlasterChannel() for x in range(24)]
-
-class PulseBlasterChannel(object):
-    def __init__(self):
-        self.enabled = False
-
-class NIBoard(object):
+class Board (object):
     def __init__(self, id):
         self.board_identifier = id
-        self.channels = [VirtualNIChannel() for x in range(8)]
+        self.channels = []
 
-class VirtualNIChannel(object):
+class Channel(object):
     def __init__(self):
         self.enabled = False
+
+class PulseBlasterBoard(Board):
+    def __init__(self, num):
+        super(PulseBlasterBoard, self).__init__(num)
+        self.analog_pin = None
+        self.novatech_pin = None
+        self.channels = [PulseBlasterChannel() for x in range(24)]
+
+
+class PulseBlasterChannel(Channel):
+    def __init__(self):
+        super(PulseBlasterChannel, self).__init__()
+        self.enabled = False
+
+class NIBoard(Board):
+    def __init__(self, id):
+        super(NIBoard, self).__init__(id)
+        self.channels = [VirtualNIChannel() for x in range(8)]
+
+class VirtualNIChannel(Channel):
+    def __init__(self):
+        super(VirtualNIChannel, self).__init__()
         self.label = ''
         self.min = -1.0
         self.max = 1.0
         self.scaling = (1.0, 0.0)
 
 
-class NovatechBoard(object):
+class NovatechBoard(Board):
     def __init__(self, port):
-        self.com_port = port
+        super(NovatechBoard, self).__init__(port)
         self.channels = [NovatechChannel() for x in range(4)]
 
-class NovatechChannel(object):
+class NovatechChannel(Channel):
     def __init__(self):
-        self.enabled = False
+        super(NovatechChannel, self).__init__()

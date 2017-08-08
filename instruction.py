@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from cycle import *
 from threading import Thread
 
@@ -32,6 +31,7 @@ class Procedure(object):
                     self.start_cycle(cycle)
                 elif self.parameters.persistent:
                     variables = self.parameters.get_default_variables()
+                    self.gui.update_current_dyn_vars(self.parameters.get_dynamic_default_variables())
                     cycle = Cycle(instructions, variables)
                     self.start_cycle(cycle)
                 else:
@@ -195,8 +195,7 @@ class ProcedureParameters(object):
 
 class Instruction(object):
     # this will contain all the information in a single instruction (a single row in the program)
-    def __init__(self, hardware_setup):
-        self.hardware_setup = hardware_setup
+    def __init__(self):
         self.name = ''
         self.duration = 0.0
         self.stepsize = 0.0
