@@ -14,6 +14,7 @@ from programmer import *
 from hardware_types import *
 from instruction import *
 from helpers import *
+from staging_tables import *
 
 ROOT_PATH = os.getcwd()
 
@@ -106,6 +107,11 @@ class Main(QMainWindow, Ui_MainWindow):
         self.steps_num.valueChanged.connect(self.update_steps_num)
         self.persistent_cb.stateChanged.connect(self.update_persistent)
         self.cycle_delay.valueChanged.connect(self.update_cycle_delay)
+
+        self.test_widget = TestTable(self.hardware)
+        self.test_tab.layout = QVBoxLayout(self.test_tab)
+        self.test_tab.layout.addWidget(self.test_widget)
+        self.test_tab.setLayout(self.test_tab.layout)
 
     def data_menu(self, table):
         menu = QMenu()
@@ -235,6 +241,7 @@ class Main(QMainWindow, Ui_MainWindow):
     def insert_analog_table_row(self, row):
         self.analog_table.insertRow(row)
         inst = self.proc_params.instructions[row]
+        self.test_widget.insert_inst(row, inst)
         for col in range((self.analog_table.columnCount())):
             if col == 0:
                 new_string = inst.name
@@ -489,6 +496,7 @@ class Main(QMainWindow, Ui_MainWindow):
         if fp:
             self.hardware.load_hardware_file(fp)
             self.redraw_hardware()
+            self.test_widget.redraw_cols(self.hardware)
 
     def save_hardware(self):
         fp = QFileDialog.getSaveFileName(self, 'Save as...', os.path.join(ROOT_PATH, 'hardware_presets'), "Text files (*.txt)")[0]

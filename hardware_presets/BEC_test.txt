@@ -28,24 +28,24 @@ PULSEBLASTER; 0
 
 NI BOARD; Dev0
   Channel;  Enabled;                          Label;      Min;      Max;       Scaling Params
-        0;        0;                    Bias Coil X;     -3.0;      3.0;             (1.0, 0)
-        1;        1;                    Bias Coil Y;     -1.0;      1.0;           (1.0, 0.0)
-        2;        0;                    Bias Coil Z;     -1.0;      1.0;           (1.0, 0.0)
-        3;        1;                   3D MOT Coils;     -1.0;      1.0;           (1.0, 0.0)
+        0;        1;                    Bias Coil X;     -3.0;      3.0;             (1.0, 0)
+        1;        0;                    Bias Coil Y;     -1.0;      1.0;           (1.0, 0.0)
+        2;        1;                    Bias Coil Z;     -1.0;      1.0;           (1.0, 0.0)
+        3;        0;                   3D MOT Coils;     -1.0;      1.0;           (1.0, 0.0)
         4;        0;                  2D MOT Coil A;     -1.0;      1.0;           (1.0, 0.0)
-        5;        1;                  2D MOT Coil B;     -1.0;      1.0;           (1.0, 0.0)
+        5;        0;                  2D MOT Coil B;     -1.0;      1.0;           (1.0, 0.0)
         6;        0;                  2D MOT Coil C;     -1.0;      1.0;           (1.0, 0.0)
         7;        1;                  2D MOT Coil D;     -1.0;      1.0;           (1.0, 0.0)
 
 NI BOARD; Dev1
   Channel;  Enabled;                          Label;      Min;      Max;       Scaling Params
         0;        1;                    2D Trap AOM;     -1.0;      1.0;           (1.0, 0.0)
-        1;        1;                  2D Repump AOM;     -1.0;      1.0;           (1.0, 0.0)
-        2;        0;                    3D Trap AOM;     -1.0;      1.0;           (1.0, 0.0)
+        1;        0;                  2D Repump AOM;     -1.0;      1.0;           (1.0, 0.0)
+        2;        1;                    3D Trap AOM;     -1.0;      1.0;           (1.0, 0.0)
         3;        1;                  3D Repump AOM;     -1.0;      1.0;           (1.0, 0.0)
-        4;        1;                    Opt Pumping;     -1.0;      1.0;           (1.0, 0.0)
-        5;        0;                      Probe AOM;     -1.0;      1.0;           (1.0, 0.0)
-        6;        0;                       RF Mixer;     -1.0;      1.0;           (1.0, 0.0)
+        4;        0;                    Opt Pumping;     -1.0;      1.0;           (1.0, 0.0)
+        5;        1;                      Probe AOM;     -1.0;      1.0;           (1.0, 0.0)
+        6;        1;                       RF Mixer;     -1.0;      1.0;           (1.0, 0.0)
         7;        0;                    3D MOT Freq;     -1.0;      1.0;           (1.0, 0.0)
 
 NOVATECH; COM0

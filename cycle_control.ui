@@ -265,7 +265,7 @@ QPushButton:pressed {background-color: rgb(170, 190, 255)}</string>
       <item>
        <widget class="QTabWidget" name="tabWidget_2">
         <property name="currentIndex">
-         <number>0</number>
+         <number>2</number>
         </property>
         <widget class="QWidget" name="tab">
          <attribute name="title">
@@ -1002,7 +1002,7 @@ QTreeWidget::indicator:unchecked:hover {background-color: #AAAAAA;}</string>
                </sizepolicy>
               </property>
               <property name="currentIndex">
-               <number>0</number>
+               <number>3</number>
               </property>
               <widget class="QWidget" name="digital">
                <attribute name="title">
@@ -1338,6 +1338,11 @@ QTreeWidget::indicator:unchecked:hover {background-color: #AAAAAA;}</string>
                  </widget>
                 </item>
                </layout>
+              </widget>
+              <widget class="QWidget" name="test_tab">
+               <attribute name="title">
+                <string>TEST</string>
+               </attribute>
               </widget>
              </widget>
             </item>
