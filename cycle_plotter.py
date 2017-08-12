@@ -56,7 +56,12 @@ class CyclePlotter(object):
 
         self.gui.plot_button.clicked.connect(self.update_data)
         self.gui.cycle_plot_number.valueChanged.connect(self.update_step)
+        self.update_channels()
 
+    def update_channels(self):
+        self.gui.digital_channel_combo.clear()
+        self.gui.analog_channel_combo.clear()
+        self.gui.novatech_channel_combo.clear()
         for i in range(3, self.gui.digital_table.columnCount()):
             name = self.gui.digital_table.horizontalHeaderItem(i).text()
             self.add_checkable_combo_item(self.gui.digital_channel_combo, name, i-3)

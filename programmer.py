@@ -1,12 +1,10 @@
 #from spinapi import *
 #from PyDAQmx import *
 
-from cycle_plotter import *
 from mock_spinapi import *
 from mock_PyDAQmx import *
 import numpy as np
 import serial
-import threading
 
 class Programmer(object):
     def __init__(self):

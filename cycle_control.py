@@ -1,20 +1,12 @@
-try:
-    from PyQt4.uic import loadUiType
-    from PyQt4 import QtCore
-    from PyQt4.QtGui import *
-except:
-    from PyQt5.uic import loadUiType
-    from PyQt5 import QtCore
-    from PyQt5.QtWidgets import *
-    from PyQt5.QtGui import QCursor
 
 import sys
 
-from programmer import *
 from hardware_types import *
-from instruction import *
 from helpers import *
+from instruction import *
+from programmer import *
 from staging_tables import *
+from cycle_plotter import *
 
 ROOT_PATH = os.getcwd()
 
@@ -36,21 +28,21 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.proc_params = ProcedureParameters()
 
-        self.plotter = CyclePlotter(self)
-
         # ------ Instruction GUI ---------
-        for table in [self.digital_table, self.analog_table, self.novatech_table]:
-            table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.digital_table.customContextMenuRequested.connect(lambda event: self.data_menu(self.digital_table))
-        self.analog_table.customContextMenuRequested.connect(lambda event: self.data_menu(self.analog_table))
-        self.novatech_table.customContextMenuRequested.connect(lambda event: self.data_menu(self.novatech_table))
+        self.digital_table = DigitalTable(self)
+        self.digital_tab.layout = QVBoxLayout(self.digital_tab)
+        self.digital_tab.layout.addWidget(self.digital_table)
+        self.digital_tab.setLayout(self.digital_tab.layout)
 
-        self.digital_table.itemChanged.connect(self.digital_table_change)
-        self.novatech_table.itemChanged.connect(self.novatech_table_change)
-        self.analog_table.itemChanged.connect(self.analog_table_change)
+        self.analog_table = AnalogTable(self)
+        self.analog_tab.layout = QVBoxLayout(self.analog_tab)
+        self.analog_tab.layout.addWidget(self.analog_table)
+        self.analog_tab.setLayout(self.analog_tab.layout)
 
-        for i in range(2, self.digital_table.columnCount()):
-            self.digital_table.setColumnWidth(i, 25)
+        self.novatech_table = NovatechTable(self)
+        self.novatech_tab.layout = QVBoxLayout(self.novatech_tab)
+        self.novatech_tab.layout.addWidget(self.novatech_table)
+        self.novatech_tab.setLayout(self.novatech_tab.layout)
 
         # ------ Process Variables GUI ---------
         self.dyn_var_name.textEdited.connect(self.update_dynamic_var_name)
@@ -70,8 +62,8 @@ class Main(QMainWindow, Ui_MainWindow):
         self.delete_stat_var.clicked.connect(self.remove_current_stat_var)
 
         # ------ File Management GUI ---------
-        self.save_button.clicked.connect(self.save_preset_handler)
-        self.load_button.clicked.connect(self.load_preset_handler)
+        self.save_button.clicked.connect(self.save_procedure_handler)
+        self.load_button.clicked.connect(self.load_procedure_handler)
         self.new_procedure_button.clicked.connect(self.new_procedure_handler)
 
         self.load_hardware_button.clicked.connect(self.load_hardware)
@@ -108,24 +100,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.persistent_cb.stateChanged.connect(self.update_persistent)
         self.cycle_delay.valueChanged.connect(self.update_cycle_delay)
 
-        self.test_widget = TestTable(self.hardware)
-        self.test_tab.layout = QVBoxLayout(self.test_tab)
-        self.test_tab.layout.addWidget(self.test_widget)
-        self.test_tab.setLayout(self.test_tab.layout)
-
-    def data_menu(self, table):
-        menu = QMenu()
-        new_row_pre = menu.addAction("Insert new instruction before")
-        new_row_aft = menu.addAction("Insert new instruction after")
-        del_row = menu.addAction("Remove instruction")
-        selectedItem = menu.exec_(QCursor.pos())
-        row = table.currentRow()
-        if selectedItem == new_row_pre:
-            self.insert_inst_handler(self.clip_inst_number(row))
-        if selectedItem == new_row_aft:
-            self.insert_inst_handler(self.clip_inst_number(row+1))
-        if selectedItem == del_row:
-            self.remove_inst_handler(self.clip_inst_number(row))
+        self.plotter = CyclePlotter(self)
 
     def insert_inst_handler(self, loc):
         if self.updating.lock:
@@ -135,78 +110,21 @@ class Main(QMainWindow, Ui_MainWindow):
             inst.set_name('Instruction ' + str(loc+1))
 
             self.proc_params.instructions.insert(loc, inst)
-            self.insert_row(loc)
+            self.insert_inst_row(loc)
+            print len(self.proc_params.instructions)
 
     def remove_inst_handler(self, loc):
         if self.updating.lock or not self.proc_params.instructions:
             return
         with self.updating:
             del self.proc_params.instructions[loc]
-            self.remove_row(loc)
+            self.remove_inst_row(loc)
 
     def clip_inst_number(self, num):
         # limits the number between 0 and the number of instructions
         if num < 0 or num >= len(self.proc_params.instructions):
             return len(self.proc_params.instructions)
         return num
-
-    def analog_table_change(self):
-        if self.updating.lock:
-            return
-        with self.updating:
-            row = self.analog_table.currentRow()
-            col = self.analog_table.currentColumn()
-            item = self.analog_table.item(row, col)
-            inst = self.proc_params.instructions[row]
-
-            if item:
-                item = item.text()
-                if col == 0:
-                    inst.set_name(item)
-                elif col == 1:
-                    inst.set_duration(item)
-                elif col == 2:
-                    inst.set_stepsize(item)
-                elif col > 2:
-                    inst.analog_functions[col - 3] = str(item)
-                self.redraw_row(row)
-
-    def novatech_table_change(self, item):
-        if self.updating.lock:
-            return
-        with self.updating:
-            row = self.novatech_table.currentRow()
-            col = self.novatech_table.currentColumn()
-            inst = self.proc_params.instructions[row]
-
-            if item:
-                item = item.text()
-                if col == 0:
-                    inst.set_name(item)
-                elif col == 1:
-                    inst.set_duration(item)
-                elif col == 2:
-                    inst.set_stepsize(item)
-                elif col > 2:
-                    inst.novatech_functions[col - 3] = str(item)
-
-                self.redraw_row(row)
-
-    def digital_table_change(self, item):
-        if self.updating.lock:
-            return
-        with self.updating:
-            row = self.digital_table.currentRow()
-            col = self.digital_table.currentColumn()
-            inst = self.proc_params.instructions[row]
-
-            if item:
-                item = item.text()
-                if col == 0:
-                    inst.set_name(item)
-                elif col == 1:
-                    inst.set_duration(item)
-                self.redraw_row(row)
 
     def redraw_all(self):
         self.redraw_all_inst()
@@ -218,89 +136,25 @@ class Main(QMainWindow, Ui_MainWindow):
     def redraw_all_inst(self):
         with self.updating:
             for i in range(self.digital_table.rowCount()):
-                self.remove_row(0)
+                self.remove_inst_row(0)
             for i in range(len(self.proc_params.instructions)):
-                self.insert_row(i)
+                self.insert_inst_row(i)
 
-    def redraw_row(self, row):
-        self.remove_row(row)
-        self.insert_row(row)
+    def redraw_inst_row(self, row):
+        self.remove_inst_row(row)
+        self.insert_inst_row(row)
 
-    def insert_row(self, row):
-        self.insert_digital_grid_row(row)
-        self.insert_analog_table_row(row)
-        self.insert_novatech_table_row(row)
+    def insert_inst_row(self, row):
+        self.digital_table.insert_row(row)
+        self.analog_table.insert_row(row)
+        self.novatech_table.insert_row(row)
         self.set_total_time()
 
-    def remove_row(self, row):
+    def remove_inst_row(self, row):
         self.digital_table.removeRow(row)
         self.analog_table.removeRow(row)
         self.novatech_table.removeRow(row)
         self.set_total_time()
-
-    def insert_analog_table_row(self, row):
-        self.analog_table.insertRow(row)
-        inst = self.proc_params.instructions[row]
-        self.test_widget.insert_inst(row, inst)
-        for col in range((self.analog_table.columnCount())):
-            if col == 0:
-                new_string = inst.name
-
-            elif col == 1:
-                new_string = inst.duration
-
-            elif col == 2:
-                new_string = inst.stepsize
-
-            else:
-                new_string = inst.analog_functions[col - 3]
-
-            self.analog_table.setItem(row, col, QTableWidgetItem(new_string))
-            self.analog_table.setRowHeight(row, 25)
-
-    def insert_novatech_table_row(self, row):
-        self.novatech_table.insertRow(row)
-        inst = self.proc_params.instructions[row]
-        for col in range((self.novatech_table.columnCount())):
-            if col == 0:
-                new_string = inst.name
-
-            elif col == 1:
-                new_string = inst.duration
-
-            elif col == 2:
-                new_string = inst.stepsize
-
-            else:
-                new_string = inst.novatech_functions[col - 3]
-
-            self.novatech_table.setItem(row, col, QTableWidgetItem(new_string))
-            self.novatech_table.setRowHeight(row, 25)
-
-    def insert_digital_grid_row(self, row):
-        inst = self.proc_params.instructions[row]
-        self.digital_table.insertRow(row)
-
-        for col in range(self.digital_table.columnCount()):
-            if col == 0:
-                self.digital_table.setItem(row, col, QTableWidgetItem(inst.name))
-
-            elif col == 1:
-                self.digital_table.setItem(row, col, QTableWidgetItem(str(inst.duration)))
-
-            else:
-                state = bool(int(inst.digital_pins[col-2]))
-                self.digital_table.setCellWidget(row, col, TableCheckBox(self, row, col, state))
-            self.digital_table.setRowHeight(row, 25)
-
-    def update_digital(self, r, c):
-        inst = self.proc_params.instructions[r]
-        c -= 2
-        digits = inst.digital_pins
-        if digits[c] == '1':
-            inst.set_digital_pins(digits[:c] + '0' + digits[c+1:])
-        else:
-            inst.set_digital_pins(digits[:c] + '1' + digits[c+1:])
 
     def new_stat_var_handler(self):
         if self.updating.lock:
@@ -466,47 +320,6 @@ class Main(QMainWindow, Ui_MainWindow):
     def update_file_num(self, val):
         self.file_number.setText(str(val))
 
-    def populate_load_presets(self):
-        # remove items currently in the dropdown list
-        for i in range(self.load_combo.count()):
-            self.load_combo.removeItem(0)
-
-        # repopulate the dropdown list if there are any presets
-        try:
-            for i in os.listdir(str(self.preset_path.text())):
-                self.load_combo.addItem(i)
-        except:
-            print('failed to load presets')
-
-    def save_preset_handler(self):
-        fp = QFileDialog.getSaveFileName(self, 'Save as...', os.path.join(ROOT_PATH, 'presets'), "Text files (*.txt)")[0]
-        if fp:
-            self.proc_params.save_to_file(fp)
-            self.current_file.setText(re.match(r'.*/(.*)$', fp).group(1))
-
-    def load_preset_handler(self):
-        fp = QFileDialog.getOpenFileName(self, 'Open...', os.path.join(ROOT_PATH, 'presets'), "Text files (*.txt)")[0]
-        if fp:
-            self.proc_params.load_from_file(fp)
-            self.current_file.setText(re.match(r'.*/(.*)$', fp).group(1))
-            self.redraw_all()
-
-    def load_hardware(self):
-        fp = QFileDialog.getOpenFileName(self, 'Open...', os.path.join(ROOT_PATH, 'hardware_presets'), "Text files (*.txt)")[0]
-        if fp:
-            self.hardware.load_hardware_file(fp)
-            self.redraw_hardware()
-            self.test_widget.redraw_cols(self.hardware)
-
-    def save_hardware(self):
-        fp = QFileDialog.getSaveFileName(self, 'Save as...', os.path.join(ROOT_PATH, 'hardware_presets'), "Text files (*.txt)")[0]
-        if fp:
-            self.hardware.save_hardware_file(fp)
-
-    def new_hardware(self):
-        self.hardware = HardwareSetup()
-        self.redraw_hardware()
-
     def new_pb_handler(self):
         pb = PulseBlasterBoard(str(len(self.hardware.pulseblasters)))
         self.hardware.pulseblasters.append(pb)
@@ -544,6 +357,9 @@ class Main(QMainWindow, Ui_MainWindow):
         self.redraw_analog_hardware()
         self.redraw_digital_hardware()
         self.redraw_novatech_hardware()
+        self.analog_table.redraw_cols()
+        self.novatech_table.redraw_cols()
+        self.digital_table.redraw_cols()
 
     def redraw_analog_hardware(self):
         with self.updating:
@@ -632,10 +448,7 @@ class Main(QMainWindow, Ui_MainWindow):
         elif not item.parent() and col == 0:
             self.analog_hardware_tree.editItem(item, col)
 
-    def new_procedure_handler(self):
-        self.proc_params = ProcedureParameters()
-        self.current_file.setText('Untitled')
-        self.redraw_all()
+
 
     def start_device_handler(self):
         if self.procedure.run_lock.running:
@@ -654,6 +467,42 @@ class Main(QMainWindow, Ui_MainWindow):
         print 'Stopping sequence'
         self.procedure.activated = False
 
+    def new_procedure_handler(self):
+        self.proc_params = ProcedureParameters()
+        self.current_file.setText('Untitled')
+        self.redraw_all()
+
+    def new_hardware(self):
+        self.hardware = HardwareSetup()
+        self.redraw_hardware()
+        self.new_procedure_handler()
+
+    def save_procedure_handler(self):
+        fp = QFileDialog.getSaveFileName(self, 'Save as...', os.path.join(ROOT_PATH, 'presets'), "Text files (*.txt)")[0]
+        if fp:
+            self.proc_params.save_to_file(fp)
+            self.current_file.setText(re.match(r'.*/(.*)$', fp).group(1))
+
+    def load_procedure_handler(self):
+        fp = QFileDialog.getOpenFileName(self, 'Open...', os.path.join(ROOT_PATH, 'presets'), "Text files (*.txt)")[0]
+        if fp:
+            self.proc_params.load_from_file(fp)
+            self.current_file.setText(re.match(r'.*/(.*)$', fp).group(1))
+            self.redraw_all()
+
+    def load_hardware(self):
+        fp = QFileDialog.getOpenFileName(self, 'Open...', os.path.join(ROOT_PATH, 'hardware_presets'), "Text files (*.txt)")[0]
+        if fp:
+            self.hardware.load_hardware_file(fp)
+            self.redraw_hardware()
+            self.plotter.update_channels()
+            self.new_procedure_handler()
+
+    def save_hardware(self):
+        fp = QFileDialog.getSaveFileName(self, 'Save as...', os.path.join(ROOT_PATH, 'hardware_presets'), "Text files (*.txt)")[0]
+        if fp:
+            self.hardware.save_hardware_file(fp)
+
 
 class UpdateLock(object):
     def __init__(self, lock):
@@ -665,21 +514,6 @@ class UpdateLock(object):
     def __exit__(self, *args):
         self.lock = False
 
-
-class TableCheckBox(QWidget):
-    def __init__(self, gui, row, col, state, *args, **kwargs):
-        QWidget.__init__(self, *args, **kwargs)
-        cb = QCheckBox()
-        cb.setCheckState(bool_to_checkstate(state))
-        if (col - 2) % 8 < 4:
-            cb.setStyleSheet(load_stylesheet('digital_cb_light.qss'))
-        else:
-            cb.setStyleSheet(load_stylesheet('digital_cb_dark.qss'))
-        cb.clicked.connect(lambda: gui.update_digital(row, col))
-        layout = QHBoxLayout(self)
-        layout.addWidget(cb)
-        layout.setAlignment(QtCore.Qt.AlignCenter)
-        layout.setContentsMargins(2, 0, 0, 0)
 
 
 class procedure_thread(Thread):
