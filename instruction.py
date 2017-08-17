@@ -1,5 +1,6 @@
 from cycle import *
 from threading import Thread
+from hardware_types import HardwareSetup
 
 import time
 
@@ -104,6 +105,60 @@ class ProcedureParameters(object):
             f.write(seq_param_format.format('===Sequencing Parameters===    Steps', 'Persistent', 'Delay'))
             f.write(seq_param_format.format(self.steps, int(self.persistent), self.delay))
 
+        with open("C:\\Users\\Scttt\\python\\Ultracold\\cycle-control\\presets\\test_dyn_hardware.txt", 'w+') as f:
+            pulseblasters = self.instructions[0].test_digital_pins.keys()
+            ni_boards = self.instructions[0].test_analog_functions.keys()
+            novatechs = self.instructions[0].test_novatech_functions.keys()
+            inst_format = '{{:>40}}; {{:>20}}; {{:>10}}; {{:>{digital_length}}}; {{:>{analog_length}}}; {{:>{novatech_length}}}\n'.format(**{
+                'digital_length': str(30*len(pulseblasters)),
+                'analog_length': str(70*len(ni_boards)),
+                'novatech_length': str(70*len(novatechs))
+            })
+            f.write(inst_format.format(
+                '===Instructions===       Name',
+                'Duration',
+                'Stepsize',
+                'Digital Outputs'+''.join([', '+x for x in pulseblasters]),
+                'Analog Outputs'+''.join([', '+x for x in ni_boards]),
+                'Novatech Outputs'+''.join([', '+x for x in novatechs]),
+            ))
+            analog_format = '{} {} {} {} {} {} {} {}'
+            novatech_format = '{} {} {} {} {} {} {} {} {} {} {} {}'
+            for i in self.instructions:
+                f.write(inst_format.format(
+                    i.name,
+                    i.duration,
+                    i.stepsize,
+                    ''.join([i.test_digital_pins.get(board) + ' \\ ' for board in pulseblasters])[:-3],
+                    ''.join([analog_format.format(*i.test_analog_functions.get(board)) + ' \\ ' for board in ni_boards])[:-3],
+                    ''.join([novatech_format.format(*i.test_novatech_functions.get(board)) + ' \\ ' for board in novatechs])[:-3]
+                ))
+            f.write('\n')
+            f.write(dynamic_var_format.format(
+                '===Dynamic Process Variables===    Name',
+                'Start',
+                'End',
+                'Default',
+                'Logarithmic',
+                'Send'
+            ))
+            for i in self.dynamic_variables:
+                f.write(dynamic_var_format.format(
+                    i.name,
+                    i.start,
+                    i.end,
+                    i.default,
+                    int(i.logarithmic),
+                    int(i.send)
+                ))
+            f.write('\n')
+            f.write(static_var_format.format('===Static Process Variables===    Name', 'Value'))
+            for i in self.static_variables:
+                f.write(static_var_format.format(i.name, i.default))
+            f.write('\n')
+            f.write(seq_param_format.format('===Sequencing Parameters===    Steps', 'Persistent', 'Delay'))
+            f.write(seq_param_format.format(self.steps, int(self.persistent), self.delay))
+
     def load_from_file(self, fp):
         parsers = iter([
             self.parse_inst_line,
@@ -138,6 +193,10 @@ class ProcedureParameters(object):
         inst.analog_functions = line[4].split(' ')
         inst.novatech_functions = line[5].split(' ')
 
+        inst.test_digital_pins.update([['0', line[3]]])
+        inst.test_analog_functions.update([['Dev0', line[4].split(' ')]])
+        inst.test_novatech_functions.update([['COM0', line[5].split(' ')]])
+
         self.instructions.append(inst)
 
     def parse_dyn_var_line(self, line):
@@ -159,7 +218,6 @@ class ProcedureParameters(object):
         self.static_variables.append(stat_var)
 
     def parse_seq_param_line(self, line):
-
         self.steps = int(line[0])
         self.persistent = bool(int(line[1]))
         self.delay = float(line[2])
@@ -195,16 +253,18 @@ class ProcedureParameters(object):
 
 class Instruction(object):
     # this will contain all the information in a single instruction (a single row in the program)
-    def __init__(self):
+    def __init__(self, hardware = HardwareSetup()):
         self.name = ''
         self.duration = 0.0
         self.stepsize = 0.0
 
-        #self.digital_pins = OrderedDict([(board.board_number, '0' * 24) for board in self.hardware_setup.pulseblasters])
         self.digital_pins = '0' * 24
         self.analog_functions = ['0'] * 8
         self.novatech_functions = ['0'] * 12
 
+        self.test_digital_pins = {board.board_identifier: '0' * 24 for board in hardware.pulseblasters}
+        self.test_analog_functions = {board.board_identifier: ['0'] * 8 for board in hardware.ni_boards}
+        self.test_novatech_functions = {board.board_identifier: ['0'] * 12 for board in hardware.novatechs}
 
     def set_digital_pins(self, flag_string):
         try:

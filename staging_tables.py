@@ -31,6 +31,16 @@ class HardwareTable(QTableWidget):
     def update_inst(self, row, col):
         pass
 
+    def get_channel_by_col(self, col, boards):
+        col -= self.fixedColumnNum
+        for board in boards:
+            for i, channel in enumerate(board.channels):
+                if channel.enabled:
+                    col -= 1
+                if col == -1:
+                    return board.board_identifier, i
+        return None, None
+
     def insert_row(self, row):
         pass
 
@@ -56,7 +66,6 @@ class HardwareTable(QTableWidget):
         if self.gui.updating.lock:
             return
         with self.gui.updating:
-            print 'updating'
             self.update_inst(row, col)
             self.gui.redraw_inst_row(row)
 
@@ -95,6 +104,10 @@ class AnalogTable(HardwareTable):
                 inst.set_stepsize(item)
             elif col > 2:
                 inst.analog_functions[col - 3] = str(item)
+                id, num = self.get_channel_by_col(col, self.gui.hardware.ni_boards)
+                inst.test_analog_functions.get(id)[num] = str(item)
+
+        print inst.test_analog_functions
 
     def insert_row(self, row):
         self.insertRow(row)
@@ -150,6 +163,11 @@ class NovatechTable(HardwareTable):
                 inst.set_stepsize(item)
             elif col > 2:
                 inst.novatech_functions[col - 3] = str(item)
+                col2 = (col - self.fixedColumnNum) / 3 + self.fixedColumnNum
+                rem = (col - self.fixedColumnNum) % 3
+                id, num = self.get_channel_by_col(col2, self.gui.hardware.novatechs)
+                inst.test_novatech_functions.get(id)[3*num+rem] = str(item)
+        print inst.test_novatech_functions
 
     def insert_row(self, row):
         self.insertRow(row)
@@ -215,6 +233,12 @@ class DigitalTable(HardwareTable):
                 state = bool(int(inst.digital_pins[col-2]))
                 self.setCellWidget(row, col, TableCheckBox(self, row, col, state))
             self.setRowHeight(row, 25)
+        self.update_cb_rows()
+
+    def update_cb_rows(self):
+        for col in range(self.fixedColumnNum, self.columnCount()):
+            for row in range(self.rowCount()):
+                self.cellWidget(row, col).row = row
 
     def update_digital(self, row, col):
         inst = self.gui.proc_params.instructions[row]
@@ -225,18 +249,33 @@ class DigitalTable(HardwareTable):
         else:
             inst.set_digital_pins(digits[:col] + '1' + digits[col + 1:])
 
+        id, num = self.get_channel_by_col(col+2, self.gui.hardware.pulseblasters)
+        digits = inst.test_digital_pins.get(id)
+        if digits[num] == '1':
+            inst.test_digital_pins.update([(id, digits[:num] + '0' + digits[num + 1:])])
+        else:
+            inst.test_digital_pins.update([(id, digits[:num] + '1' + digits[num + 1:])])
+        print inst.test_digital_pins, row, col
+
 
 class TableCheckBox(QWidget):
-    def __init__(self, table, row, col, state, *args, **kwargs):
-        QWidget.__init__(self, *args, **kwargs)
+    def __init__(self, table, row, col, state):
+        QWidget.__init__(self)
+        self.table = table
+        self.row = row
+        self.col = col
         cb = QCheckBox()
         cb.setCheckState(bool_to_checkstate(state))
         if (col - 2) % 8 < 4:
             cb.setStyleSheet(load_stylesheet('digital_cb_light.qss'))
         else:
             cb.setStyleSheet(load_stylesheet('digital_cb_dark.qss'))
-        cb.clicked.connect(lambda: table.update_digital(row, col))
+        cb.clicked.connect(self.update_instruction)
         layout = QHBoxLayout(self)
         layout.addWidget(cb)
         layout.setAlignment(QtCore.Qt.AlignCenter)
         layout.setContentsMargins(2, 0, 0, 0)
+
+    def update_instruction(self):
+        self.table.update_digital(self.row, self.col)
+

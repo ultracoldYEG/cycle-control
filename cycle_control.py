@@ -106,12 +106,11 @@ class Main(QMainWindow, Ui_MainWindow):
         if self.updating.lock:
             return
         with self.updating:
-            inst = Instruction()
+            inst = Instruction(self.hardware)
             inst.set_name('Instruction ' + str(loc+1))
 
             self.proc_params.instructions.insert(loc, inst)
             self.insert_inst_row(loc)
-            print len(self.proc_params.instructions)
 
     def remove_inst_handler(self, loc):
         if self.updating.lock or not self.proc_params.instructions:
@@ -467,15 +466,24 @@ class Main(QMainWindow, Ui_MainWindow):
         print 'Stopping sequence'
         self.procedure.activated = False
 
-    def new_procedure_handler(self):
+    def clear_procedure(self):
         self.proc_params = ProcedureParameters()
         self.current_file.setText('Untitled')
         self.redraw_all()
 
+    def new_procedure_handler(self):
+        confirmation = ConfirmationWindow()
+        confirmation.exec_()
+        if not confirmation.cancelled:
+            self.clear_procedure()
+
     def new_hardware(self):
-        self.hardware = HardwareSetup()
-        self.redraw_hardware()
-        self.new_procedure_handler()
+        confirmation = ConfirmationWindow()
+        confirmation.exec_()
+        if not confirmation.cancelled:
+            self.hardware = HardwareSetup()
+            self.redraw_hardware()
+            self.new_procedure_handler()
 
     def save_procedure_handler(self):
         fp = QFileDialog.getSaveFileName(self, 'Save as...', os.path.join(ROOT_PATH, 'presets'), "Text files (*.txt)")[0]
@@ -496,12 +504,35 @@ class Main(QMainWindow, Ui_MainWindow):
             self.hardware.load_hardware_file(fp)
             self.redraw_hardware()
             self.plotter.update_channels()
-            self.new_procedure_handler()
+            self.clear_procedure()
 
     def save_hardware(self):
         fp = QFileDialog.getSaveFileName(self, 'Save as...', os.path.join(ROOT_PATH, 'hardware_presets'), "Text files (*.txt)")[0]
         if fp:
             self.hardware.save_hardware_file(fp)
+
+
+class ConfirmationWindow(QDialog):
+    def __init__(self):
+        super(ConfirmationWindow, self).__init__()
+        self.cancelled = True
+        self.layout = QHBoxLayout(self)
+        message = QLabel('Are you sure?')
+        yes_btn = QPushButton('Yes')
+        yes_btn.clicked.connect(self.confirm)
+        no_btn = QPushButton('Cancel')
+        no_btn.clicked.connect(self.cancel)
+        self.layout.addWidget(message)
+        self.layout.addWidget(yes_btn)
+        self.layout.addWidget(no_btn)
+        self.setLayout(self.layout)
+
+    def confirm(self):
+        self.cancelled = False
+        self.done(0)
+
+    def cancel(self):
+        self.done(0)
 
 
 class UpdateLock(object):
@@ -513,7 +544,6 @@ class UpdateLock(object):
 
     def __exit__(self, *args):
         self.lock = False
-
 
 
 class procedure_thread(Thread):
