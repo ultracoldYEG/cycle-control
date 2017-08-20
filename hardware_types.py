@@ -45,7 +45,6 @@ class HardwareSetup(object):
             channel.min = float(line[3])
             channel.max = float(line[4])
             channel.scaling = str(line[5])
-            print line[2]
 
     def parse_nova(self, f, port):
         nova = NovatechBoard(str(port))

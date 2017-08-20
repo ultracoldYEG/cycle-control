@@ -1,4 +1,5 @@
-           ===Instructions===       Name;             Duration;   Stepsize;               Digital Pins;                                                              Analog Outputs;                                                            Novatech Outputs
+INSTRUCTIONS
+                                    Name;             Duration;   Stepsize;               Digital Pins, 0;                                                              Analog Outputs, Dev0;                                                            Novatech Outputs, COM0
                                      MOT;                    1;        0.1;   100010010000000000000000;                                                            0 1 0 0 0 0 0 0 ;                                                    0 0 0 0 0 0 0 0 0 0 0 0 
                                      MOT;                   15;      0.001;   100010010000000000000000;                                                            0 1 0 0 0 0 0 0 ;                                                    0 0 0 0 0 0 0 0 0 0 0 0 
                                 molasses;                20e-3;      0.001;   100010110000000000000000;                                                        0.4 0.5 0 0 0 0 0 0 ;                                                    0 0 0 0 0 0 0 0 0 0 0 0 
@@ -27,9 +28,12 @@
                           trigger3 pause;                50e-3;          0;   100000110000000000000000;                                                            0 0 0 0 0 0 0 0 ;                                                    0 0 0 0 0 0 0 0 0 0 0 0 
                                      end;                50e-3;          0;   100010010000000000000000;                                                            0 0 0 0 0 0 0 0 ;                                                    0 0 0 0 0 0 0 0 0 0 0 0 
 
- ===Dynamic Process Variables===    Name;                Start;                  End;              Default;     Logarithmic;   Send
+DYNAMIC_PROCESS_VARIABLES
+                                    Name;                Start;                  End;              Default;     Logarithmic;   Send
 
-  ===Static Process Variables===    Name;                Value
+STATIC_PROCESS_VARIABLES
+                                    Name;                Value
 
-    ===Sequencing Parameters===    Steps;  Persistent;    Delay
+SEQUENCING_PARAMETERS
+                                   Steps;  Persistent;    Delay
                                        1;           0;      0.0

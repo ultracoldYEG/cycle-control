@@ -26,7 +26,7 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.procedure = Procedure(self.programmer, self)
 
-        self.proc_params = ProcedureParameters()
+        self.proc_params = ProcedureParameters(self)
 
         # ------ Instruction GUI ---------
         self.digital_table = DigitalTable(self)
@@ -447,8 +447,6 @@ class Main(QMainWindow, Ui_MainWindow):
         elif not item.parent() and col == 0:
             self.analog_hardware_tree.editItem(item, col)
 
-
-
     def start_device_handler(self):
         if self.procedure.run_lock.running:
             print 'Already running'
@@ -467,23 +465,23 @@ class Main(QMainWindow, Ui_MainWindow):
         self.procedure.activated = False
 
     def clear_procedure(self):
-        self.proc_params = ProcedureParameters()
+        self.proc_params = ProcedureParameters(self)
         self.current_file.setText('Untitled')
         self.redraw_all()
 
     def new_procedure_handler(self):
-        confirmation = ConfirmationWindow()
+        confirmation = ConfirmationWindow('New Procedure')
         confirmation.exec_()
         if not confirmation.cancelled:
             self.clear_procedure()
 
     def new_hardware(self):
-        confirmation = ConfirmationWindow()
+        confirmation = ConfirmationWindow('New Hardware Setup', msg = 'All unsaved changes to the current procedure will be lost. Continue?')
         confirmation.exec_()
         if not confirmation.cancelled:
             self.hardware = HardwareSetup()
             self.redraw_hardware()
-            self.new_procedure_handler()
+            self.clear_procedure()
 
     def save_procedure_handler(self):
         fp = QFileDialog.getSaveFileName(self, 'Save as...', os.path.join(ROOT_PATH, 'presets'), "Text files (*.txt)")[0]
@@ -513,19 +511,23 @@ class Main(QMainWindow, Ui_MainWindow):
 
 
 class ConfirmationWindow(QDialog):
-    def __init__(self):
+    def __init__(self, title,  msg = 'Are you sure?'):
         super(ConfirmationWindow, self).__init__()
         self.cancelled = True
         self.layout = QHBoxLayout(self)
-        message = QLabel('Are you sure?')
+        self.setLayout(self.layout)
+        self.setWindowTitle(title)
+
+        message = QLabel(msg)
         yes_btn = QPushButton('Yes')
-        yes_btn.clicked.connect(self.confirm)
         no_btn = QPushButton('Cancel')
+
+        yes_btn.clicked.connect(self.confirm)
         no_btn.clicked.connect(self.cancel)
+
         self.layout.addWidget(message)
         self.layout.addWidget(yes_btn)
         self.layout.addWidget(no_btn)
-        self.setLayout(self.layout)
 
     def confirm(self):
         self.cancelled = False
@@ -575,7 +577,7 @@ class gui_thread(QtCore.QThread):
             time.sleep(0.01)
         self.prog_update.emit(1000)
 
-# **************************************************************************************
+
 if __name__ == '__main__':
     app1 = QApplication(sys.argv)
     main = Main()

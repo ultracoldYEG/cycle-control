@@ -6,7 +6,7 @@ import time
 
 class Procedure(object):
     def __init__(self, programmer, gui):
-        self.parameters = ProcedureParameters()
+        self.parameters = ProcedureParameters(gui)
         self.programmer = programmer
         self.gui = gui
         self.current_step = 0
@@ -48,7 +48,8 @@ class Procedure(object):
 
 
 class ProcedureParameters(object):
-    def __init__(self):
+    def __init__(self, gui):
+        self.gui = gui
         self.instructions = []
         self.static_variables = []
         self.dynamic_variables = []
@@ -57,65 +58,21 @@ class ProcedureParameters(object):
         self.delay = 0.0
 
     def save_to_file(self, fp):
-        inst_format = '{:>40}; {:>20}; {:>10}; {:>26}; {:>75}; {:>75}\n'
         dynamic_var_format = '{:>40}; {:>20}; {:>20}; {:>20}; {:>15}; {:>6}\n'
         static_var_format = '{:>40}; {:>20}\n'
-        seq_param_format = '{:>40}; {:>11}; {:>8}\n'
+        seq_param_format = '{:>10}; {:>11}; {:>8}\n'
         with open(fp, 'w+') as f:
-            f.write(inst_format.format(
-                '===Instructions===       Name',
-                'Duration',
-                'Stepsize',
-                'Digital Pins',
-                'Analog Outputs',
-                'Novatech Outputs'
-            ))
-            for i in self.instructions:
-                f.write(inst_format.format(
-                    i.name,
-                    i.duration,
-                    i.stepsize,
-                    i.digital_pins,
-                    ''.join([x + ' ' for x in i.analog_functions]),
-                    ''.join([x + ' ' for x in i.novatech_functions])
-                ))
-            f.write('\n')
-            f.write(dynamic_var_format.format(
-                '===Dynamic Process Variables===    Name',
-                'Start',
-                'End',
-                'Default',
-                'Logarithmic',
-                'Send'
-            ))
-            for i in self.dynamic_variables:
-                f.write(dynamic_var_format.format(
-                    i.name,
-                    i.start,
-                    i.end,
-                    i.default,
-                    int(i.logarithmic),
-                    int(i.send)
-                ))
-            f.write('\n')
-            f.write(static_var_format.format('===Static Process Variables===    Name', 'Value'))
-            for i in self.static_variables:
-                f.write(static_var_format.format(i.name, i.default))
-            f.write('\n')
-            f.write(seq_param_format.format('===Sequencing Parameters===    Steps', 'Persistent', 'Delay'))
-            f.write(seq_param_format.format(self.steps, int(self.persistent), self.delay))
-
-        with open("C:\\Users\\Scttt\\python\\Ultracold\\cycle-control\\presets\\test_dyn_hardware.txt", 'w+') as f:
-            pulseblasters = self.instructions[0].test_digital_pins.keys()
-            ni_boards = self.instructions[0].test_analog_functions.keys()
-            novatechs = self.instructions[0].test_novatech_functions.keys()
+            pulseblasters = [board.board_identifier for board in self.gui.hardware.pulseblasters]
+            ni_boards = [board.board_identifier for board in self.gui.hardware.ni_boards]
+            novatechs = [board.board_identifier for board in self.gui.hardware.novatechs]
             inst_format = '{{:>40}}; {{:>20}}; {{:>10}}; {{:>{digital_length}}}; {{:>{analog_length}}}; {{:>{novatech_length}}}\n'.format(**{
                 'digital_length': str(30*len(pulseblasters)),
                 'analog_length': str(70*len(ni_boards)),
                 'novatech_length': str(70*len(novatechs))
             })
+            f.write('INSTRUCTIONS\n')
             f.write(inst_format.format(
-                '===Instructions===       Name',
+                'Name',
                 'Duration',
                 'Stepsize',
                 'Digital Outputs'+''.join([', '+x for x in pulseblasters]),
@@ -129,13 +86,13 @@ class ProcedureParameters(object):
                     i.name,
                     i.duration,
                     i.stepsize,
-                    ''.join([i.test_digital_pins.get(board) + ' \\ ' for board in pulseblasters])[:-3],
-                    ''.join([analog_format.format(*i.test_analog_functions.get(board)) + ' \\ ' for board in ni_boards])[:-3],
-                    ''.join([novatech_format.format(*i.test_novatech_functions.get(board)) + ' \\ ' for board in novatechs])[:-3]
+                    ''.join([i.digital_pins.get(board) + ' \\ ' for board in pulseblasters])[:-3],
+                    ''.join([analog_format.format(*i.analog_functions.get(board)) + ' \\ ' for board in ni_boards])[:-3],
+                    ''.join([novatech_format.format(*i.novatech_functions.get(board)) + ' \\ ' for board in novatechs])[:-3]
                 ))
-            f.write('\n')
+            f.write('\nDYNAMIC_PROCESS_VARIABLES\n')
             f.write(dynamic_var_format.format(
-                '===Dynamic Process Variables===    Name',
+                'Name',
                 'Start',
                 'End',
                 'Default',
@@ -151,76 +108,100 @@ class ProcedureParameters(object):
                     int(i.logarithmic),
                     int(i.send)
                 ))
-            f.write('\n')
-            f.write(static_var_format.format('===Static Process Variables===    Name', 'Value'))
+            f.write('\nSTATIC_PROCESS_VARIABLES\n')
+            f.write(static_var_format.format('Name', 'Value'))
             for i in self.static_variables:
                 f.write(static_var_format.format(i.name, i.default))
-            f.write('\n')
-            f.write(seq_param_format.format('===Sequencing Parameters===    Steps', 'Persistent', 'Delay'))
+            f.write('\nSEQUENCING_PARAMETERS\n')
+            f.write(seq_param_format.format('Steps', 'Persistent', 'Delay'))
             f.write(seq_param_format.format(self.steps, int(self.persistent), self.delay))
 
     def load_from_file(self, fp):
-        parsers = iter([
-            self.parse_inst_line,
-            self.parse_dyn_var_line,
-            self.parse_stat_var_line,
-            self.parse_seq_param_line
-        ])
-        parser = parsers.next()
+        self.instructions = []
+        self.static_variables = []
+        self.dynamic_variables = []
+        self.steps = 1
+        self.persistent = False
+        self.delay = 0.0
+        parsers = {
+            "INSTRUCTIONS": self.parse_inst_line,
+            "DYNAMIC_PROCESS_VARIABLES": self.parse_dyn_var_line,
+            "STATIC_PROCESS_VARIABLES": self.parse_stat_var_line,
+            "SEQUENCING_PARAMETERS": self.parse_seq_param_line,
+        }
         with open(fp, 'rb') as f:
-            self.instructions = []
-            self.static_variables = []
-            self.dynamic_variables = []
-            self.steps = 1
-            self.persistent = False
-            self.delay = 0.0
-            f.next()
             for line in f:
-                line = [x.strip() for x in line.split(';')]
-                if line == ['']:
-                    f.next()
-                    parser = parsers.next()
+                line = line.strip()
+                if line in parsers:
+                    parser = parsers.get(line)
+                    parser(f, f.next())
                     continue
 
-                parser(line)
+    def parse_inst_line(self, f, header):
+        header = [x.strip() for x in header.split(';')]
 
-    def parse_inst_line(self, line):
-        inst = Instruction()
-        inst.set_name(line[0])
-        inst.set_duration(line[1])
-        inst.set_stepsize(line[2])
-        inst.set_digital_pins(line[3])
-        inst.analog_functions = line[4].split(' ')
-        inst.novatech_functions = line[5].split(' ')
+        pulseblasters = [x.strip() for x in header[3].split(',')][1:]
+        ni_boards = [x.strip() for x in header[4].split(',')][1:]
+        novatechs = [x.strip() for x in header[5].split(',')][1:]
 
-        inst.test_digital_pins.update([['0', line[3]]])
-        inst.test_analog_functions.update([['Dev0', line[4].split(' ')]])
-        inst.test_novatech_functions.update([['COM0', line[5].split(' ')]])
+        for line in f:
+            if not line.strip():
+                return
+            line = [x.strip() for x in line.split(';')]
+            inst = Instruction(self.gui.hardware)
+            self.instructions.append(inst)
 
-        self.instructions.append(inst)
+            inst.set_name(line[0])
+            inst.set_duration(line[1])
+            inst.set_stepsize(line[2])
 
-    def parse_dyn_var_line(self, line):
-        dyn_var = DynamicProcessVariable()
-        dyn_var.set_name(line[0])
-        dyn_var.set_start(line[1])
-        dyn_var.set_end(line[2])
-        dyn_var.set_default(line[3])
-        dyn_var.set_log(int(line[4]))
-        dyn_var.set_send(int(line[5]))
+            for i, board_inst in enumerate([x.strip() for x in line[3].split('\\')]):
+                if pulseblasters[i] in inst.digital_pins:
+                    inst.digital_pins.update([(pulseblasters[i], board_inst)])
 
-        self.dynamic_variables.append(dyn_var)
+            for i, board_inst in enumerate([x.strip() for x in line[4].split('\\')]):
+                if ni_boards[i] in inst.analog_functions:
+                    inst.analog_functions.update([(ni_boards[i], board_inst.split(' '))])
 
-    def parse_stat_var_line(self, line):
-        stat_var = StaticProcessVariable()
-        stat_var.set_name(line[0])
-        stat_var.set_default(line[1])
+            for i, board_inst in enumerate([x.strip() for x in line[5].split('\\')]):
+                if novatechs[i] in inst.novatech_functions:
+                    inst.novatech_functions.update([(novatechs[i], board_inst.split(' '))])
 
-        self.static_variables.append(stat_var)
+    def parse_dyn_var_line(self, f, header):
+        for line in f:
+            if not line.strip():
+                return
+            line = [x.strip() for x in line.split(';')]
+            dyn_var = DynamicProcessVariable()
+            self.dynamic_variables.append(dyn_var)
 
-    def parse_seq_param_line(self, line):
-        self.steps = int(line[0])
-        self.persistent = bool(int(line[1]))
-        self.delay = float(line[2])
+            dyn_var.set_name(line[0])
+            dyn_var.set_start(line[1])
+            dyn_var.set_end(line[2])
+            dyn_var.set_default(line[3])
+            dyn_var.set_log(int(line[4]))
+            dyn_var.set_send(int(line[5]))
+
+    def parse_stat_var_line(self, f, header):
+        for line in f:
+            if not line.strip():
+                return
+            line = [x.strip() for x in line.split(';')]
+            stat_var = StaticProcessVariable()
+            self.static_variables.append(stat_var)
+
+            stat_var.set_name(line[0])
+            stat_var.set_default(line[1])
+
+    def parse_seq_param_line(self, f, header):
+        for line in f:
+            if not line.strip():
+                return
+            line = [x.strip() for x in line.split(';')]
+
+            self.steps = int(line[0])
+            self.persistent = bool(int(line[1]))
+            self.delay = float(line[2])
 
     def get_static_variables(self):
         return {x.name: float(x.default) for x in self.static_variables}
@@ -258,13 +239,9 @@ class Instruction(object):
         self.duration = 0.0
         self.stepsize = 0.0
 
-        self.digital_pins = '0' * 24
-        self.analog_functions = ['0'] * 8
-        self.novatech_functions = ['0'] * 12
-
-        self.test_digital_pins = {board.board_identifier: '0' * 24 for board in hardware.pulseblasters}
-        self.test_analog_functions = {board.board_identifier: ['0'] * 8 for board in hardware.ni_boards}
-        self.test_novatech_functions = {board.board_identifier: ['0'] * 12 for board in hardware.novatechs}
+        self.digital_pins = {board.board_identifier: '0' * 24 for board in hardware.pulseblasters}
+        self.analog_functions = {board.board_identifier: ['0'] * 8 for board in hardware.ni_boards}
+        self.novatech_functions = {board.board_identifier: ['0'] * 12 for board in hardware.novatechs}
 
     def set_digital_pins(self, flag_string):
         try:
@@ -280,15 +257,15 @@ class Instruction(object):
 
     def set_duration(self, duration):
         try:
-            float(duration)
-            self.duration = duration
+            if float(duration) >= 0.0:
+                self.duration = duration
         except ValueError:
             pass
 
     def set_stepsize(self, stepsize):
         try:
-            float(stepsize)
-            self.stepsize = stepsize
+            if float(stepsize) >= 0:
+                self.stepsize = stepsize
         except ValueError:
             pass
 

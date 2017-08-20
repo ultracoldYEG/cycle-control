@@ -103,11 +103,8 @@ class AnalogTable(HardwareTable):
             elif col == 2:
                 inst.set_stepsize(item)
             elif col > 2:
-                inst.analog_functions[col - 3] = str(item)
                 id, num = self.get_channel_by_col(col, self.gui.hardware.ni_boards)
-                inst.test_analog_functions.get(id)[num] = str(item)
-
-        print inst.test_analog_functions
+                inst.analog_functions.get(id)[num] = str(item)
 
     def insert_row(self, row):
         self.insertRow(row)
@@ -120,7 +117,8 @@ class AnalogTable(HardwareTable):
             elif col == 2:
                 new_string = inst.stepsize
             else:
-                new_string = inst.analog_functions[col - 3]
+                id, num = self.get_channel_by_col(col, self.gui.hardware.ni_boards)
+                new_string = inst.analog_functions.get(id)[num]
 
             item = QTableWidgetItem(new_string)
             item.setBackground(self.colors[col])
@@ -162,12 +160,10 @@ class NovatechTable(HardwareTable):
             elif col == 2:
                 inst.set_stepsize(item)
             elif col > 2:
-                inst.novatech_functions[col - 3] = str(item)
                 col2 = (col - self.fixedColumnNum) / 3 + self.fixedColumnNum
                 rem = (col - self.fixedColumnNum) % 3
                 id, num = self.get_channel_by_col(col2, self.gui.hardware.novatechs)
-                inst.test_novatech_functions.get(id)[3*num+rem] = str(item)
-        print inst.test_novatech_functions
+                inst.novatech_functions.get(id)[3*num+rem] = str(item)
 
     def insert_row(self, row):
         self.insertRow(row)
@@ -180,7 +176,10 @@ class NovatechTable(HardwareTable):
             elif col == 2:
                 new_string = inst.stepsize
             else:
-                new_string = inst.novatech_functions[col - 3]
+                col2 = (col - self.fixedColumnNum) / 3 + self.fixedColumnNum
+                rem = (col - self.fixedColumnNum) % 3
+                id, num = self.get_channel_by_col(col2, self.gui.hardware.novatechs)
+                new_string = inst.novatech_functions.get(id)[3*num + rem]
 
             item = QTableWidgetItem(new_string)
             item.setBackground(self.colors[col])
@@ -230,7 +229,8 @@ class DigitalTable(HardwareTable):
                 self.setItem(row, col, QTableWidgetItem(str(inst.duration)))
 
             else:
-                state = bool(int(inst.digital_pins[col-2]))
+                id, num = self.get_channel_by_col(col, self.gui.hardware.pulseblasters)
+                state = bool(int(inst.digital_pins.get(id)[num]))
                 self.setCellWidget(row, col, TableCheckBox(self, row, col, state))
             self.setRowHeight(row, 25)
         self.update_cb_rows()
@@ -242,20 +242,12 @@ class DigitalTable(HardwareTable):
 
     def update_digital(self, row, col):
         inst = self.gui.proc_params.instructions[row]
-        col -= 2
-        digits = inst.digital_pins
-        if digits[col] == '1':
-            inst.set_digital_pins(digits[:col] + '0' + digits[col + 1:])
-        else:
-            inst.set_digital_pins(digits[:col] + '1' + digits[col + 1:])
-
-        id, num = self.get_channel_by_col(col+2, self.gui.hardware.pulseblasters)
-        digits = inst.test_digital_pins.get(id)
+        id, num = self.get_channel_by_col(col, self.gui.hardware.pulseblasters)
+        digits = inst.digital_pins.get(id)
         if digits[num] == '1':
-            inst.test_digital_pins.update([(id, digits[:num] + '0' + digits[num + 1:])])
+            inst.digital_pins.update([(id, digits[:num] + '0' + digits[num + 1:])])
         else:
-            inst.test_digital_pins.update([(id, digits[:num] + '1' + digits[num + 1:])])
-        print inst.test_digital_pins, row, col
+            inst.digital_pins.update([(id, digits[:num] + '1' + digits[num + 1:])])
 
 
 class TableCheckBox(QWidget):
