@@ -233,7 +233,6 @@ class ProcedureParameters(object):
         return sum([float(x.duration) for x in self.instructions])
 
 class Instruction(object):
-    # this will contain all the information in a single instruction (a single row in the program)
     def __init__(self, hardware = HardwareSetup()):
         self.name = ''
         self.duration = 0.0

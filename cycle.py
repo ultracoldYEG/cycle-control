@@ -3,8 +3,6 @@ import re
 import copy
 
 FUNCTION_REGEX = r'^(\w+)\((.*)\)$'
-ANALOG_PIN = 2
-NOVATECH_PIN = 3
 PULSE_WIDTH = 5e-6
 
 def frange(x, y, jump):
@@ -53,9 +51,9 @@ class Cycle(object):
         self.analog_domain = []
         self.novatech_domain = []
         self.digital_domain = []
-        self.analog_data = [[] for  i in self.instructions[0].analog_functions]
-        self.novatech_data = [[] for i in self.instructions[0].novatech_functions]
-        self.digital_data = []
+        self.analog_data = {board: [[] for i in vals] for board, vals in self.instructions[0].analog_functions.iteritems()}
+        self.novatech_data = {board: [[] for i in vals] for board, vals in self.instructions[0].novatech_functions.iteritems()}
+        self.digital_data = {board: [] for board, vals in self.instructions[0].digital_pins.iteritems()}
 
     def create_waveforms(self):
         self.create_analog_waveform()
@@ -68,8 +66,9 @@ class Cycle(object):
             domain, waveforms = self.create_single_waveform(inst, inst.analog_functions)
             for i in domain:
                 self.analog_domain.append(i + total_t)
-            for channel in range(len(waveforms)):
-                self.analog_data[channel] += waveforms[channel]
+            for board, channels in waveforms.iteritems():
+                for channel in range(len(channels)):
+                    self.analog_data.get(board)[channel] += waveforms.get(board)[channel]
             total_t += float(inst.duration)
 
     def create_novatech_waveform(self):
@@ -78,8 +77,9 @@ class Cycle(object):
             domain, waveforms = self.create_single_waveform(inst, inst.novatech_functions)
             for i in domain:
                 self.novatech_domain.append(i + total_t)
-            for channel in range(len(waveforms)):
-                self.novatech_data[channel] += waveforms[channel]
+            for board, channels in waveforms.iteritems():
+                for channel in range(len(channels)):
+                    self.novatech_data.get(board)[channel] += waveforms.get(board)[channel]
 
             total_t += float(inst.duration)
 
@@ -92,53 +92,69 @@ class Cycle(object):
         iter_domains = [iter(domain), iter(self.analog_domain), iter(self.novatech_domain)]
         next = [x.next() for x in iter_domains]
 
+        # TODO include option to select which analog/novatech pins are used
+        ANALOG_PINS = [('0', 2)]
+        NOVATECH_PINS = [('0', 3)]
         while True:
             index = next.index(min(next))
 
             if index == 0:
-                self.pulse_pins(min(next), iter_pins.next(), ANALOG_PIN, NOVATECH_PIN)
+                current_pins = iter_pins.next()
+                self.pulse_pins(min(next), current_pins, *ANALOG_PINS + NOVATECH_PINS)
                 next = [x.next() for x in iter_domains]
+
             elif index == 1:
-                self.pulse_pins(min(next), self.digital_data[-1], ANALOG_PIN)
+                self.pulse_pins(min(next), current_pins, *ANALOG_PINS)
                 next[1] = iter_domains[1].next()
             elif index == 2:
-                self.pulse_pins(min(next), self.digital_data[-1], NOVATECH_PIN)
+                self.pulse_pins(min(next), current_pins, *NOVATECH_PINS)
                 next[2] = iter_domains[2].next()
 
             if min(next) == domain[-1]:
-                self.digital_domain.append(min(next))
-                self.digital_data.append(self.digital_data[-1])
                 break
 
-    def pulse_pins(self, domain, pin_flag, *pins):
-        for pin in pins:
-            pin_flag = replace_bit(pin_flag, pin, '1')
+    def pulse_pins(self, domain, all_pins, *pins):
+        for item in pins:
+            board = item[0]
+            pin = item[1]
+            board_pins = all_pins.get(board)
+            board_pins = replace_bit(board_pins, pin, '1')
+            all_pins.update([(board, board_pins)])
 
         self.digital_domain.append(domain)
-        self.digital_data.append(pin_flag)
+        for board, data in all_pins.iteritems():
+            self.digital_data.get(board).append(data)
 
-        for pin in pins:
-            pin_flag = replace_bit(pin_flag, pin, '0')
+        for item in pins:
+            board = item[0]
+            pin = item[1]
+            board_pins = all_pins.get(board)
+            board_pins = replace_bit(board_pins, pin, '0')
+            all_pins.update([(board, board_pins)])
 
         self.digital_domain.append(domain + PULSE_WIDTH)
-        self.digital_data.append(pin_flag)
+        for board, data in all_pins.iteritems():
+            self.digital_data.get(board).append(data)
 
-    def create_single_waveform(self, inst, func_strings):
-        funcs = []
-        for func_string in func_strings:
-            key, args = parse_function(func_string, self.variables)
+    def create_single_waveform(self, inst, boards):
+        funcs = {}
+        for board, func_strings in boards.iteritems():
+            board_funcs = []
+            funcs.update([[board, board_funcs]])
+            for func_string in func_strings:
+                key, args = parse_function(func_string, self.variables)
 
-            if key in FUNCTION_MAP:
-                func = FUNCTION_MAP.get(key)
-                funcs.append((func, args))
-            else:
-                print key, 'is not a valid function key'
-                return
+                if key in FUNCTION_MAP:
+                    func = FUNCTION_MAP.get(key)
+                    board_funcs.append((func, args))
+                else:
+                    print key, 'is not a valid function key'
+                    return
 
         duration = float(inst.duration)
         stepsize = float(inst.stepsize)
 
-        if all((func == constFunc for func, args in funcs)):
+        if all((func == constFunc for board, board_funcs in funcs.iteritems() for func, args in board_funcs)):
             domain = [0.0]
         else:
             domain = frange(0.0, duration, stepsize)
@@ -146,4 +162,4 @@ class Cycle(object):
         if self.instructions[-1] == inst:
             domain.append(duration)
 
-        return domain, [func(domain, duration, *args) for func, args in funcs]
+        return domain, {board: [func(domain, duration, *args) for func, args in board_funcs] for board, board_funcs in funcs.iteritems()}

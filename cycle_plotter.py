@@ -62,17 +62,22 @@ class CyclePlotter(object):
         self.gui.digital_channel_combo.clear()
         self.gui.analog_channel_combo.clear()
         self.gui.novatech_channel_combo.clear()
-        for i in range(3, self.gui.digital_table.columnCount()):
-            name = self.gui.digital_table.horizontalHeaderItem(i).text()
-            self.add_checkable_combo_item(self.gui.digital_channel_combo, name, i-3)
+        for board in self.gui.hardware.pulseblasters:
+            for i, channel in enumerate(board.channels):
+                if channel.enabled:
+                    self.add_checkable_combo_item(self.gui.digital_channel_combo, i, board.board_identifier, i)
 
-        for i in range(3, self.gui.analog_table.columnCount()):
-            name = self.gui.analog_table.horizontalHeaderItem(i).text()
-            self.add_checkable_combo_item(self.gui.analog_channel_combo, name, i - 3)
+        for board in self.gui.hardware.ni_boards:
+            for i, channel in enumerate(board.channels):
+                if channel.enabled:
+                    self.add_checkable_combo_item(self.gui.analog_channel_combo, channel.label, board.board_identifier, i)
 
-        for i in range(3, self.gui.novatech_table.columnCount()):
-            name = self.gui.novatech_table.horizontalHeaderItem(i).text()
-            self.add_checkable_combo_item(self.gui.novatech_channel_combo, name, i - 3)
+        for board in self.gui.hardware.novatechs:
+            for i, channel in enumerate(board.channels):
+                if channel.enabled:
+                    for j, param in enumerate(['Amp', 'Freq', 'Phase']):
+                        label = board.board_identifier + ' '+ str(i) + ' ' + param
+                        self.add_checkable_combo_item(self.gui.novatech_channel_combo, label, board.board_identifier, 3*i + j)
 
     def update_step(self, val):
         if val <= self.gui.proc_params.steps:
@@ -89,57 +94,46 @@ class CyclePlotter(object):
         self.cycle = Cycle(self.gui.proc_params.instructions, self.gui.proc_params.get_cycle_variables(self.step - 1))
         self.cycle.create_waveforms()
 
-        results = []
-        for i in range(self.gui.digital_channel_combo.count()):
-            if self.gui.digital_channel_combo.model().item(i, 0).checkState():
-                results.append(i)
-        self.plot_digital_channels(*results)
-
-        results = []
-        for i in range(self.gui.analog_channel_combo.count()):
-            if self.gui.analog_channel_combo.model().item(i, 0).checkState():
-                results.append(i)
-        self.plot_analog_channels(*results)
-
-        results = []
-        for i in range(self.gui.novatech_channel_combo.count()):
-            if self.gui.novatech_channel_combo.model().item(i, 0).checkState():
-                results.append(i)
-        self.plot_novatech_channels(*results)
+        self.plot_digital_channels()
+        self.plot_analog_channels()
+        self.plot_novatech_channels()
 
         self.canvas.draw()
 
-    def add_checkable_combo_item(self, combo, name, i):
+    def add_checkable_combo_item(self, combo, name, board_id, channel_num):
         combo.addItem(str(name))
-        item = combo.model().item(i, 0)
+        item = combo.model().item(combo.count()-1, 0)
         item.setCheckState(QtCore.Qt.Unchecked)
+        item.appendColumn([QStandardItem('test!')])
+        item.setData((board_id, channel_num))
 
-    def plot_analog_channels(self, *channels):
-        plot_num = len(channels)
+    def plot_analog_channels(self):
+        for i in range(self.gui.analog_channel_combo.count()):
+            item = self.gui.analog_channel_combo.model().item(i, 0)
+            if item.checkState():
+                analog_domain = self.cycle.analog_domain
+                analog_data = self.cycle.analog_data.get(item.data()[0])[item.data()[1]]
+                x, y = prepare_sample_plot_data(analog_domain, analog_data)
+                self.ax.plot(x, y, marker='o', markersize=2)
 
-        for i in range(plot_num):
-            analog_domain = self.cycle.analog_domain
-            analog_data = self.cycle.analog_data[channels[i]]
-            x, y = prepare_sample_plot_data(analog_domain, analog_data)
-            self.ax.plot(x, y, marker='o', markersize=2)
+    def plot_novatech_channels(self):
+        for i in range(self.gui.novatech_channel_combo.count()):
+            item = self.gui.novatech_channel_combo.model().item(i, 0)
+            if item.checkState():
+                novatech_domain = self.cycle.novatech_domain
+                novatech_data = self.cycle.novatech_data.get(item.data()[0])[item.data()[1]]
+                x, y = prepare_sample_plot_data(novatech_domain, novatech_data)
+                self.ax.plot(x, y, marker='o', markersize=2)
 
-    def plot_novatech_channels(self, *channels):
-        plot_num = len(channels)
-
-        for i in range(plot_num):
-            analog_domain = self.cycle.novatech_domain
-            analog_data = self.cycle.novatech_data[channels[i]]
-            x, y = prepare_sample_plot_data(analog_domain, analog_data)
-            self.ax.plot(x, y, marker='o', markersize=2)
-
-    def plot_digital_channels(self, *channels):
-        plot_num = len(channels)
-
-        for i in range(plot_num):
-            digital_domain = self.cycle.digital_domain
-            digital_data = [int(x[channels[i]]) for x in self.cycle.digital_data]
-            x, y = prepare_sample_plot_data(digital_domain, digital_data)
-            self.ax.plot(x, y, marker='o', markersize=2)
+    def plot_digital_channels(self):
+        for i in range(self.gui.digital_channel_combo.count()):
+            item = self.gui.digital_channel_combo.model().item(i, 0)
+            if item.checkState():
+                digital_domain = self.cycle.digital_domain
+                board_data = self.cycle.digital_data.get(item.data()[0])
+                digital_data = [int(x[item.data()[1]]) for x in board_data]
+                x, y = prepare_sample_plot_data(digital_domain, digital_data)
+                self.ax.plot(x, y, marker='o', markersize=2)
 
 
 class CheckableComboBox(QComboBox):

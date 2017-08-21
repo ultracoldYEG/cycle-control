@@ -452,13 +452,13 @@ class Main(QMainWindow, Ui_MainWindow):
             print 'Already running'
             return
         self.procedure.activated = True
-        self.procedure.parameters = copy.deepcopy(self.proc_params)
+        self.procedure.parameters = copy.copy(self.proc_params)
         thread = procedure_thread(self.procedure)
         thread.start()
 
     def update_globals_handler(self):
         print 'Updated globals'
-        self.procedure.parameters = copy.deepcopy(self.proc_params)
+        self.procedure.parameters = copy.copy(self.proc_params)
 
     def stop_device_handler(self):
         print 'Stopping sequence'
