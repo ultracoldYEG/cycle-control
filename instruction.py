@@ -5,41 +5,36 @@ from hardware_types import HardwareSetup
 import time
 
 class Procedure(object):
-    def __init__(self, programmer, gui):
-        self.parameters = ProcedureParameters(gui)
-        self.programmer = programmer
+    def __init__(self, gui):
+        self.parameters = ProcedureParameters()
+        self.programmer = gui.programmer
         self.gui = gui
         self.current_step = 0
         self.activated = False
         self.run_lock = RunningLock()
         self.cycle_number = 0
+        self.current_variables = {}
 
     def start_sequence(self):
-        instructions = self.parameters.instructions
-        steps = self.parameters.steps
+        if len(self.parameters.instructions) <= 1:
+            print('Put in more instructions')
+            return
         with self.run_lock:
-            if len(instructions) <= 1:
-                print('Put in more instructions')
-                return
             self.current_step = 0
             while self.activated:
-                self.current_step += 1
-                self.cycle_number += 1
-                if self.current_step <= steps:
-                    variables = self.parameters.get_cycle_variables(self.current_step - 1)
-                    self.gui.update_current_dyn_vars(self.parameters.get_dynamic_variables(self.current_step - 1))
-                    cycle = Cycle(instructions, variables)
-                    self.start_cycle(cycle)
+                if self.current_step <= self.parameters.steps:
+                    self.current_variables = self.parameters.get_cycle_variables(self.current_step)
                 elif self.parameters.persistent:
-                    variables = self.parameters.get_default_variables()
-                    self.gui.update_current_dyn_vars(self.parameters.get_dynamic_default_variables())
-                    cycle = Cycle(instructions, variables)
-                    self.start_cycle(cycle)
+                    self.current_variables = self.parameters.get_default_variables()
                 else:
                     break
+                cycle = Cycle(self.parameters.instructions, self.current_variables)
+                self.run_cycle(cycle)
                 time.sleep(self.parameters.delay)
+                self.current_step += 1
+                self.cycle_number += 1
 
-    def start_cycle(self, cycle):
+    def run_cycle(self, cycle):
         thread = cycle_thread(self.programmer, cycle)
         self.gui.worker.procedure = self
         self.gui.worker.start()
@@ -48,8 +43,7 @@ class Procedure(object):
 
 
 class ProcedureParameters(object):
-    def __init__(self, gui):
-        self.gui = gui
+    def __init__(self):
         self.instructions = []
         self.static_variables = []
         self.dynamic_variables = []
@@ -57,14 +51,14 @@ class ProcedureParameters(object):
         self.persistent = False
         self.delay = 0.0
 
-    def save_to_file(self, fp):
+    def save_to_file(self, fp, gui):
         dynamic_var_format = '{:>40}; {:>20}; {:>20}; {:>20}; {:>15}; {:>6}\n'
         static_var_format = '{:>40}; {:>20}\n'
         seq_param_format = '{:>10}; {:>11}; {:>8}\n'
         with open(fp, 'w+') as f:
-            pulseblasters = [board.board_identifier for board in self.gui.hardware.pulseblasters]
-            ni_boards = [board.board_identifier for board in self.gui.hardware.ni_boards]
-            novatechs = [board.board_identifier for board in self.gui.hardware.novatechs]
+            pulseblasters = [board.board_identifier for board in gui.hardware.pulseblasters]
+            ni_boards = [board.board_identifier for board in gui.hardware.ni_boards]
+            novatechs = [board.board_identifier for board in gui.hardware.novatechs]
             inst_format = '{{:>40}}; {{:>20}}; {{:>10}}; {{:>{digital_length}}}; {{:>{analog_length}}}; {{:>{novatech_length}}}\n'.format(**{
                 'digital_length': str(30*len(pulseblasters)),
                 'analog_length': str(70*len(ni_boards)),
@@ -116,7 +110,7 @@ class ProcedureParameters(object):
             f.write(seq_param_format.format('Steps', 'Persistent', 'Delay'))
             f.write(seq_param_format.format(self.steps, int(self.persistent), self.delay))
 
-    def load_from_file(self, fp):
+    def load_from_file(self, fp, gui):
         self.instructions = []
         self.static_variables = []
         self.dynamic_variables = []
@@ -134,10 +128,10 @@ class ProcedureParameters(object):
                 line = line.strip()
                 if line in parsers:
                     parser = parsers.get(line)
-                    parser(f, f.next())
+                    parser(f, f.next(), gui)
                     continue
 
-    def parse_inst_line(self, f, header):
+    def parse_inst_line(self, f, header, gui):
         header = [x.strip() for x in header.split(';')]
 
         pulseblasters = [x.strip() for x in header[3].split(',')][1:]
@@ -148,7 +142,7 @@ class ProcedureParameters(object):
             if not line.strip():
                 return
             line = [x.strip() for x in line.split(';')]
-            inst = Instruction(self.gui.hardware)
+            inst = Instruction(gui.hardware)
             self.instructions.append(inst)
 
             inst.set_name(line[0])
@@ -167,7 +161,7 @@ class ProcedureParameters(object):
                 if novatechs[i] in inst.novatech_functions:
                     inst.novatech_functions.update([(novatechs[i], board_inst.split(' '))])
 
-    def parse_dyn_var_line(self, f, header):
+    def parse_dyn_var_line(self, f, header, gui):
         for line in f:
             if not line.strip():
                 return
@@ -182,7 +176,7 @@ class ProcedureParameters(object):
             dyn_var.set_log(int(line[4]))
             dyn_var.set_send(int(line[5]))
 
-    def parse_stat_var_line(self, f, header):
+    def parse_stat_var_line(self, f, header, gui):
         for line in f:
             if not line.strip():
                 return
@@ -193,7 +187,7 @@ class ProcedureParameters(object):
             stat_var.set_name(line[0])
             stat_var.set_default(line[1])
 
-    def parse_seq_param_line(self, f, header):
+    def parse_seq_param_line(self, f, header, gui):
         for line in f:
             if not line.strip():
                 return

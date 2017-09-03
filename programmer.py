@@ -7,9 +7,10 @@ import numpy as np
 import serial
 
 class Programmer(object):
-    def __init__(self):
+    def __init__(self, gui):
         #setUp NI board
-        self.taskHandle = taskHandle()
+        self.gui = gui
+        self.taskHandles = {}
 
         # Set up pulse blaster
         pb_set_debug(1)
@@ -26,7 +27,51 @@ class Programmer(object):
             exit(-1)
 
         pb_core_clock(100.0)
+        self.update_task_handles()
 
+    def update_task_handles(self):
+        self.clear_all_task_handles()
+        self.taskHandles = {}
+
+        for board in self.gui.hardware.ni_boards:
+            tasks = []
+            for i, channel in enumerate(board.channels):
+                if not channel.enabled:
+                    tasks.append(None)
+                    continue
+                task = taskHandle()
+                DAQmxCreateTask("", task)
+                physical_channel = board.board_identifier + '/ao' + str(i) # "Dev3/ao6:7"
+                DAQmxCreateAOVoltageChan(task, physical_channel, "", channel.min, channel.max, DAQmx_Val_Volts, None)
+                tasks.append(task)
+            self.taskHandles.update([(board.board_identifier, tasks)])
+        for i in self.taskHandles.iteritems():
+            print i
+
+    def start_all_task_handles(self):
+        for board, tasks in self.taskHandles.iteritems():
+            for task in tasks:
+                if task:
+                    DAQmxStartTask(task)
+
+    def stop_all_task_handles(self):
+        for board, tasks in self.taskHandles.iteritems():
+            for task in tasks:
+                if task:
+                    DAQmxStopTask(task)
+
+    def clear_all_task_handles(self):
+        for board, tasks in self.taskHandles.iteritems():
+            for task in tasks:
+                if task:
+                    DAQmxStopTask(task)
+                    DAQmxClearTask(task)
+
+    def get_first_task_handle(self):
+        for board, tasks in self.taskHandles.iteritems():
+            for task in tasks:
+                if task:
+                    return task
 
     def program_device_handler(self, cycle):
         pb_stop()
@@ -36,41 +81,32 @@ class Programmer(object):
 
         self.program_pulse_blaster()
         self.program_NI()
-        self.program_novatech()
+        #self.program_novatech()
 
     def program_pulse_blaster(self):
         domain = self.cycle.digital_domain
-        data = self.cycle.digital_data
 
-        pb_start_programming(PULSE_PROGRAM)
-        start = pb_inst_pbonly(int(data[0], 2), Inst.CONTINUE, None, (domain[1] - domain[0]) * s)
-        for i in range(1, len(domain)-2):
-            pin_flag = int(data[i], 2)
-            stepsize = (domain[i+1] - domain[i]) * s
-            pb_inst_pbonly(pin_flag, Inst.CONTINUE, None, stepsize)
+        for board, board_data in self.cycle.digital_data.iteritems():
+            pb_select_board(int(board))
+            pb_start_programming(PULSE_PROGRAM)
+            start = pb_inst_pbonly(int(board_data[0], 2), Inst.CONTINUE, None, (domain[1] - domain[0]) * s)
+            for i in range(1, len(domain)-2):
+                pin_flag = int(board_data[i], 2)
+                stepsize = (domain[i+1] - domain[i]) * s
+                pb_inst_pbonly(pin_flag, Inst.CONTINUE, None, stepsize)
 
-        pb_inst_pbonly(int(data[-2], 2), Inst.BRANCH, start, (domain[-1] - domain[-2]) * s)
-        pb_stop_programming()
+            pb_inst_pbonly(int(board_data[-2], 2), Inst.BRANCH, start, (domain[-1] - domain[-2]) * s)
+            pb_stop_programming()
 
     def program_NI(self):
-        analog_data_grouped_by_channel = [x for channel in self.cycle.analog_data for x in channel[:-1]]
-
-        analog_data = np.array(analog_data_grouped_by_channel, dtype=np.float64)
-        num_samples = int(len(analog_data) / 2)
-        try:
-            DAQmxStopTask(self.taskHandle)
-            DAQmxClearTask(self.taskHandle)
-        except:
-            print('no task')
-
-        self.taskHandle = taskHandle()
-
-        DAQmxCreateTask("", self.taskHandle)
-
-        DAQmxCreateAOVoltageChan(self.taskHandle, "Dev3/ao6:7", "", -5.0, 5.0, DAQmx_Val_Volts, None)
-        DAQmxCfgSampClkTiming(self.taskHandle, "/Dev3/PFI0", 10000.0, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, num_samples)
-
-        DAQmxWriteAnalogF64(self.taskHandle, num_samples, 0, 10.0, DAQmx_Val_GroupByChannel, analog_data, None, None)
+        for board, tasks in self.taskHandles.iteritems():
+            analog_board_data = self.cycle.analog_data.get(board)
+            for i, task in enumerate(tasks):
+                if task:
+                    data = np.array(analog_board_data[i], dtype=np.float64)[:-1]
+                    num_samples = len(data)
+                    DAQmxCfgSampClkTiming(task, "/Dev3/PFI0", 10000.0, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, num_samples)
+                    DAQmxWriteAnalogF64(task, num_samples, 0, 10.0, DAQmx_Val_GroupByChannel, data, None, None)
 
     def program_novatech(self):
         nova_data = self.cycle.novatech_data
@@ -93,15 +129,15 @@ class Programmer(object):
                     #convert V to dBm: dBm = 10 * log_10 ( V_RMS^2 / (50ohm * 1mW) )
 
     def start_device_handler(self):
-        print('activated')
         pb_start()
 
-        DAQmxStartTask(self.taskHandle)
-        DAQmxWaitUntilTaskDone(self.taskHandle, self.cycle.analog_domain[-1])  # seconds
-        DAQmxStopTask(self.taskHandle)
+        self.start_all_task_handles()
+        DAQmxWaitUntilTaskDone(self.get_first_task_handle(), self.cycle.analog_domain[-1])  # seconds
+        self.stop_all_task_handles()
 
         pb_stop()
 
     def stop_device_handler(self):
-        DAQmxStopTask(self.taskHandle)
+        self.stop_all_task_handles()
         pb_stop()
+        # TODO set default values here

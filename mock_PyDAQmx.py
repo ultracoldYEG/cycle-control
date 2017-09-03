@@ -27,8 +27,6 @@ class taskHandle(object):
         self.timeout = 100
         self.sort_type = ''
 
-
-
 def DAQmxCreateTask(name, taskHandle):
     if taskHandle.lock:
         print 'DAQmx ERROR: locked'
@@ -44,14 +42,14 @@ def DAQmxStartTask(taskHandle):
         print 'DAQmx ERROR: cant start while active'
         return
     taskHandle.activated = True
-    print 'DAQmx STARTED'
+    print 'DAQmx STARTED: ' + taskHandle.devices
 
 def DAQmxStopTask(taskHandle):
     if taskHandle.lock:
         print 'DAQmx ERROR: locked'
         return
     taskHandle.activated = False
-    print 'DAQmx STOPPED'
+    print 'DAQmx STOPPED: ' + taskHandle.devices
 
 def DAQmxClearTask(taskHandle):
     if taskHandle.lock:
@@ -96,7 +94,7 @@ def DAQmxWriteAnalogF64(taskHandle, num_samples, autostart, timeout, sort_type, 
     taskHandle.timeout = timeout
     taskHandle.sort_type = sort_type
     taskHandle.instructions = analog_data
-    print 'DAQmx programmed'
+    print 'DAQmx programmed: ' + taskHandle.devices
 
 def DAQmxWaitUntilTaskDone(taskHandle, delay):
     if taskHandle.lock:

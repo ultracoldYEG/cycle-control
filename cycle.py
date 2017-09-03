@@ -114,6 +114,7 @@ class Cycle(object):
                 break
 
     def pulse_pins(self, domain, all_pins, *pins):
+        all_pins = copy.copy(all_pins)
         for item in pins:
             board = item[0]
             pin = item[1]

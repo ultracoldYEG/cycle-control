@@ -22,11 +22,11 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.hardware = HardwareSetup()
 
-        self.programmer = Programmer()
+        self.programmer = Programmer(self)
 
-        self.procedure = Procedure(self.programmer, self)
+        self.procedure = Procedure(self)
 
-        self.proc_params = ProcedureParameters(self)
+        self.proc_params = ProcedureParameters()
 
         # ------ Instruction GUI ---------
         self.digital_table = DigitalTable(self)
@@ -94,6 +94,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.worker = gui_thread(self.procedure)
         self.worker.prog_update.connect(self.update_prog)
         self.worker.text_update.connect(self.update_cycle_label)
+        self.worker.dyn_var_update.connect(self.update_current_dyn_vars)
         self.worker.file_num_update.connect(self.update_file_num)
 
         self.steps_num.valueChanged.connect(self.update_steps_num)
@@ -452,20 +453,20 @@ class Main(QMainWindow, Ui_MainWindow):
             print 'Already running'
             return
         self.procedure.activated = True
-        self.procedure.parameters = copy.copy(self.proc_params)
+        self.procedure.parameters = copy.deepcopy(self.proc_params)
         thread = procedure_thread(self.procedure)
         thread.start()
 
     def update_globals_handler(self):
         print 'Updated globals'
-        self.procedure.parameters = copy.copy(self.proc_params)
+        self.procedure.parameters = copy.deepcopy(self.proc_params)
 
     def stop_device_handler(self):
         print 'Stopping sequence'
         self.procedure.activated = False
 
     def clear_procedure(self):
-        self.proc_params = ProcedureParameters(self)
+        self.proc_params = ProcedureParameters()
         self.current_file.setText('Untitled')
         self.redraw_all()
 
@@ -486,13 +487,13 @@ class Main(QMainWindow, Ui_MainWindow):
     def save_procedure_handler(self):
         fp = QFileDialog.getSaveFileName(self, 'Save as...', os.path.join(ROOT_PATH, 'presets'), "Text files (*.txt)")[0]
         if fp:
-            self.proc_params.save_to_file(fp)
+            self.proc_params.save_to_file(fp, self)
             self.current_file.setText(re.match(r'.*/(.*)$', fp).group(1))
 
     def load_procedure_handler(self):
         fp = QFileDialog.getOpenFileName(self, 'Open...', os.path.join(ROOT_PATH, 'presets'), "Text files (*.txt)")[0]
         if fp:
-            self.proc_params.load_from_file(fp)
+            self.proc_params.load_from_file(fp, self)
             self.current_file.setText(re.match(r'.*/(.*)$', fp).group(1))
             self.redraw_all()
 
@@ -502,6 +503,7 @@ class Main(QMainWindow, Ui_MainWindow):
             self.hardware.load_hardware_file(fp)
             self.redraw_hardware()
             self.plotter.update_channels()
+            self.programmer.update_task_handles()
             self.clear_procedure()
 
     def save_hardware(self):
@@ -560,6 +562,7 @@ class procedure_thread(Thread):
 class gui_thread(QtCore.QThread):
     prog_update = QtCore.pyqtSignal(object)
     text_update = QtCore.pyqtSignal(object)
+    dyn_var_update = QtCore.pyqtSignal(object)
     file_num_update = QtCore.pyqtSignal(object)
 
     def __init__(self, procedure):
@@ -569,7 +572,8 @@ class gui_thread(QtCore.QThread):
     def run(self):
         total = self.procedure.parameters.get_total_time()
         init = time.time()
-        self.text_update.emit('Cycle {}/{}'.format(self.procedure.current_step, self.procedure.parameters.steps))
+        self.text_update.emit('Cycle {}/{}'.format(self.procedure.current_step + 1, self.procedure.parameters.steps))
+        self.dyn_var_update.emit(self.procedure.current_variables)
         self.file_num_update.emit(self.procedure.cycle_number)
         while (time.time() - init) < total:
             val = math.ceil((time.time() - init) / total * 1000.0)
@@ -583,5 +587,7 @@ if __name__ == '__main__':
     main = Main()
     main.show()
     app1.exec_()
+    main.programmer.clear_all_task_handles()
+    main.procedure.activated = False
     pb_close()
     sys.exit()
