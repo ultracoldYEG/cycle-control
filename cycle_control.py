@@ -28,6 +28,8 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.proc_params = ProcedureParameters()
 
+        self.clipboard = None
+
         # ------ Instruction GUI ---------
         self.digital_table = DigitalTable(self)
         self.digital_tab.layout = QVBoxLayout(self.digital_tab)
@@ -103,6 +105,9 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.plotter = CyclePlotter(self)
 
+    def copy_inst_handler(self, loc):
+        self.clipboard = copy.deepcopy(self.proc_params.instructions[loc])
+
     def insert_inst_handler(self, loc):
         if self.updating.lock:
             return
@@ -110,6 +115,14 @@ class Main(QMainWindow, Ui_MainWindow):
             inst = Instruction(self.hardware)
             inst.set_name('Instruction ' + str(loc+1))
 
+            self.proc_params.instructions.insert(loc, inst)
+            self.insert_inst_row(loc)
+
+    def paste_inst_handler(self, loc):
+        if self.updating.lock:
+            return
+        with self.updating:
+            inst = copy.deepcopy(self.clipboard)
             self.proc_params.instructions.insert(loc, inst)
             self.insert_inst_row(loc)
 
@@ -149,6 +162,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.analog_table.insert_row(row)
         self.novatech_table.insert_row(row)
         self.set_total_time()
+        self.highlight_update_globals()
 
     def remove_inst_row(self, row):
         self.digital_table.removeRow(row)
@@ -245,7 +259,10 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def insert_dyn_var(self, row):
         dyn_var = self.proc_params.dynamic_variables[row]
-        self.dyn_var_list.insertItem(row, QListWidgetItem(dyn_var.name))
+        item = QListWidgetItem(dyn_var.name)
+        if dyn_var.send:
+            item.setBackground(QColor(140,255,100))
+        self.dyn_var_list.insertItem(row, item)
         self.dyn_var_list.setCurrentRow(row)
 
     def remove_current_dyn_var(self):
@@ -285,6 +302,11 @@ class Main(QMainWindow, Ui_MainWindow):
     def update_dynamic_var_send(self, state):
         if self.current_dyn_var:
             self.current_dyn_var.set_send(state)
+            item = self.dyn_var_list.currentItem()
+            if state:
+                item.setBackground(QColor(140,255,100))
+            else:
+                item.setBackground(QColor(255,255,255))
 
     def update_steps_num(self, val):
         self.proc_params.steps = int(val)
@@ -460,6 +482,13 @@ class Main(QMainWindow, Ui_MainWindow):
     def update_globals_handler(self):
         print 'Updated globals'
         self.procedure.parameters = copy.deepcopy(self.proc_params)
+        self.highlight_update_globals()
+
+    def highlight_update_globals(self):
+        if self.procedure.parameters == self.proc_params:
+            self.update_globals_button.setStyleSheet(load_stylesheet('update_globals_default.qss'))
+        else:
+            self.update_globals_button.setStyleSheet(load_stylesheet('update_globals_highlighted.qss'))
 
     def stop_device_handler(self):
         print 'Stopping sequence'

@@ -88,7 +88,7 @@ class Cycle(object):
         for inst in self.instructions:
             domain.append(domain[-1] + float(inst.duration))
 
-        iter_pins = iter([inst.digital_pins for inst in self.instructions])
+        iter_pins = iter([copy.copy(inst.digital_pins) for inst in self.instructions])
         iter_domains = [iter(domain), iter(self.analog_domain), iter(self.novatech_domain)]
         next = [x.next() for x in iter_domains]
 
@@ -111,10 +111,12 @@ class Cycle(object):
                 next[2] = iter_domains[2].next()
 
             if min(next) == domain[-1]:
+                self.digital_domain.append(min(next))
+                for board, data in current_pins.iteritems():
+                    self.digital_data.get(board).append(data)
                 break
 
     def pulse_pins(self, domain, all_pins, *pins):
-        all_pins = copy.copy(all_pins)
         for item in pins:
             board = item[0]
             pin = item[1]

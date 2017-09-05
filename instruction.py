@@ -22,7 +22,7 @@ class Procedure(object):
         with self.run_lock:
             self.current_step = 0
             while self.activated:
-                if self.current_step <= self.parameters.steps:
+                if self.current_step < self.parameters.steps:
                     self.current_variables = self.parameters.get_cycle_variables(self.current_step)
                 elif self.parameters.persistent:
                     self.current_variables = self.parameters.get_default_variables()
@@ -50,6 +50,22 @@ class ProcedureParameters(object):
         self.steps = 1
         self.persistent = False
         self.delay = 0.0
+
+    def __eq__(self, other):
+        if any(getattr(self, attr, None) != getattr(other, attr, None) for attr in ['steps', 'persistent', 'delay']):
+            return False
+        for attr in ['instructions', 'static_variables', 'dynamic_variables']:
+            l1 = getattr(self, attr, None)
+            l2 = getattr(other, attr, None)
+            if len(l1) != len(l2):
+                return False
+            for i in range(len(l1)):
+                if not l1[i] == l2[i]:
+                    print l1[i]
+                    print l2[i]
+                    return False
+        return True
+
 
     def save_to_file(self, fp, gui):
         dynamic_var_format = '{:>40}; {:>20}; {:>20}; {:>20}; {:>15}; {:>6}\n'
@@ -236,6 +252,10 @@ class Instruction(object):
         self.analog_functions = {board.board_identifier: ['0'] * 8 for board in hardware.ni_boards}
         self.novatech_functions = {board.board_identifier: ['0'] * 12 for board in hardware.novatechs}
 
+    def __eq__(self, other):
+        attrs = ['name', 'duration', 'stepsize', 'digital_pins', 'analog_functions', 'novatech_functions']
+        return all(getattr(self, attr, None) == getattr(other, attr, None) for attr in attrs)
+
     def set_digital_pins(self, flag_string):
         try:
             self.digital_pins = str(flag_string)
@@ -270,6 +290,10 @@ class StaticProcessVariable(object):
         self.name = ''
         self.default = '0.0'
 
+    def __eq__(self, other):
+        attrs = ['name', 'default']
+        return all(getattr(self, attr, None) == getattr(other, attr, None) for attr in attrs)
+
     def set_name(self, name):
         try:
             self.name = str(name)
@@ -290,6 +314,10 @@ class DynamicProcessVariable(StaticProcessVariable):
         self.end = '0.0'
         self.logarithmic = False
         self.send = False
+
+    def __eq__(self, other):
+        attrs = ['name', 'default', 'start', 'end', 'logarithmic', 'send', ]
+        return all(getattr(self, attr, None) == getattr(other, attr, None) for attr in attrs)
 
     def set_start(self, start):
         try:

@@ -17,6 +17,7 @@ class HardwareTable(QTableWidget):
         self.customContextMenuRequested.connect(self.data_menu)
         self.cellChanged.connect(self.cell_changed_handler)
         self.fixedColumnNum = 2
+        self.colors = []
 
     def clear_all(self):
         num = self.fixedColumnNum
@@ -50,16 +51,28 @@ class HardwareTable(QTableWidget):
 
     def data_menu(self):
         menu = QMenu()
-        new_row_pre = menu.addAction("Insert new instruction before")
-        new_row_aft = menu.addAction("Insert new instruction after")
+        new_row_pre = menu.addAction("New instruction before")
+        new_row_aft = menu.addAction("New instruction after")
+        copy_row = menu.addAction("Copy instruction")
+        paste_row_pre = menu.addAction("Paste new instruction before")
+        paste_row_aft = menu.addAction("Paste new instruction after")
         del_row = menu.addAction("Remove instruction")
+        if not self.gui.clipboard:
+            paste_row_pre.setEnabled(False)
+            paste_row_aft.setEnabled(False)
         selectedItem = menu.exec_(QCursor.pos())
         row = self.currentRow()
         if selectedItem == new_row_pre:
             self.gui.insert_inst_handler(self.gui.clip_inst_number(row))
-        if selectedItem == new_row_aft:
+        elif selectedItem == new_row_aft:
             self.gui.insert_inst_handler(self.gui.clip_inst_number(row + 1))
-        if selectedItem == del_row:
+        elif selectedItem == copy_row:
+            self.gui.copy_inst_handler(self.gui.clip_inst_number(row))
+        elif selectedItem == paste_row_pre:
+            self.gui.paste_inst_handler(self.gui.clip_inst_number(row))
+        elif selectedItem == paste_row_aft:
+            self.gui.paste_inst_handler(self.gui.clip_inst_number(row + 1))
+        elif selectedItem == del_row:
             self.gui.remove_inst_handler(self.gui.clip_inst_number(row))
 
     def cell_changed_handler(self, row, col):
@@ -75,6 +88,7 @@ class AnalogTable(HardwareTable):
         self.insertColumn(2)
         self.setHorizontalHeaderItem(2, QTableWidgetItem('Stepsize'))
         self.fixedColumnNum = 3
+        self.colors = [QColor(255,255,255), QColor(255,255,255), QColor(255,255,255)]
 
     def redraw_cols(self):
         self.clear_all()
@@ -131,6 +145,7 @@ class NovatechTable(HardwareTable):
         self.insertColumn(2)
         self.setHorizontalHeaderItem(2, QTableWidgetItem('Stepsize'))
         self.fixedColumnNum = 3
+        self.colors = [QColor(255,255,255), QColor(255,255,255), QColor(255,255,255)]
 
     def redraw_cols(self):
         self.clear_all()
@@ -189,6 +204,7 @@ class NovatechTable(HardwareTable):
 class DigitalTable(HardwareTable):
     def __init__(self, gui):
         super(DigitalTable, self).__init__(gui)
+        self.colors = [QColor(255,255,255), QColor(255,255,255)]
 
     def redraw_cols(self):
         self.clear_all()
