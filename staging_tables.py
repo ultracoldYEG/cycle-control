@@ -39,7 +39,7 @@ class HardwareTable(QTableWidget):
                 if channel.enabled:
                     col -= 1
                 if col == -1:
-                    return board.board_identifier, i
+                    return board, i
         return None, None
 
     def insert_row(self, row):
@@ -60,6 +60,8 @@ class HardwareTable(QTableWidget):
         if not self.gui.clipboard:
             paste_row_pre.setEnabled(False)
             paste_row_aft.setEnabled(False)
+        if len(self.selectedIndexes()) > 1:
+            set_to = menu.addAction("Set cells to...")
         selectedItem = menu.exec_(QCursor.pos())
         row = self.currentRow()
         if selectedItem == new_row_pre:
@@ -74,6 +76,11 @@ class HardwareTable(QTableWidget):
             self.gui.paste_inst_handler(self.gui.clip_inst_number(row + 1))
         elif selectedItem == del_row:
             self.gui.remove_inst_handler(self.gui.clip_inst_number(row))
+        elif len(self.selectedIndexes()) > 1 and selectedItem == set_to:
+            dialog = SetToWindow()
+            dialog.exec_()
+            if not dialog.cancelled:
+                self.set_cells_to_handler(dialog.result)
 
     def cell_changed_handler(self, row, col):
         if self.gui.updating.lock:
@@ -117,8 +124,18 @@ class AnalogTable(HardwareTable):
             elif col == 2:
                 inst.set_stepsize(item)
             elif col > 2:
-                id, num = self.get_channel_by_col(col, self.gui.hardware.ni_boards)
-                inst.analog_functions.get(id)[num] = str(item)
+                board, num = self.get_channel_by_col(col, self.gui.hardware.ni_boards)
+                id = board.board_identifier
+                channel = board.channels[num]
+                lims = (channel.min, channel.max)
+                try:
+                    val = float(item)
+                    if val < lims[0] or val > lims[1]:
+                        print 'bad input at: ', row, col
+                        return
+                    inst.analog_functions.get(id)[num] = str(item)
+                except:
+                    inst.analog_functions.get(id)[num] = str(item)
 
     def insert_row(self, row):
         self.insertRow(row)
@@ -127,14 +144,24 @@ class AnalogTable(HardwareTable):
             if col == 0:
                 new_string = inst.name
             elif col == 1:
-                new_string = inst.duration
+                new_string = str(inst.duration)
             elif col == 2:
-                new_string = inst.stepsize
+                new_string = str(inst.stepsize)
             else:
-                id, num = self.get_channel_by_col(col, self.gui.hardware.ni_boards)
+                board, num = self.get_channel_by_col(col, self.gui.hardware.ni_boards)
+                id = board.board_identifier
                 new_string = inst.analog_functions.get(id)[num]
 
             item = QTableWidgetItem(new_string)
+            item.setBackground(self.colors[col])
+            self.setItem(row, col, item)
+            self.setRowHeight(row, 25)
+
+    def set_cells_to_handler(self, val):
+        for index in self.selectedIndexes():
+            row = index.row()
+            col = index.column()
+            item = QTableWidgetItem(val)
             item.setBackground(self.colors[col])
             self.setItem(row, col, item)
             self.setRowHeight(row, 25)
@@ -177,7 +204,8 @@ class NovatechTable(HardwareTable):
             elif col > 2:
                 col2 = (col - self.fixedColumnNum) / 3 + self.fixedColumnNum
                 rem = (col - self.fixedColumnNum) % 3
-                id, num = self.get_channel_by_col(col2, self.gui.hardware.novatechs)
+                board, num = self.get_channel_by_col(col2, self.gui.hardware.novatechs)
+                id = board.board_identifier
                 inst.novatech_functions.get(id)[3*num+rem] = str(item)
 
     def insert_row(self, row):
@@ -187,16 +215,26 @@ class NovatechTable(HardwareTable):
             if col == 0:
                 new_string = inst.name
             elif col == 1:
-                new_string = inst.duration
+                new_string = str(inst.duration)
             elif col == 2:
-                new_string = inst.stepsize
+                new_string = str(inst.stepsize)
             else:
                 col2 = (col - self.fixedColumnNum) / 3 + self.fixedColumnNum
                 rem = (col - self.fixedColumnNum) % 3
-                id, num = self.get_channel_by_col(col2, self.gui.hardware.novatechs)
+                board, num = self.get_channel_by_col(col2, self.gui.hardware.novatechs)
+                id = board.board_identifier
                 new_string = inst.novatech_functions.get(id)[3*num + rem]
 
             item = QTableWidgetItem(new_string)
+            item.setBackground(self.colors[col])
+            self.setItem(row, col, item)
+            self.setRowHeight(row, 25)
+
+    def set_cells_to_handler(self, val):
+        for index in self.selectedIndexes():
+            row = index.row()
+            col = index.column()
+            item = QTableWidgetItem(val)
             item.setBackground(self.colors[col])
             self.setItem(row, col, item)
             self.setRowHeight(row, 25)
@@ -211,6 +249,7 @@ class DigitalTable(HardwareTable):
         n = self.fixedColumnNum
         colors = [QColor(200,200,255), QColor(255,200,200)]
         self.colors = [QColor(255,255,255), QColor(255,255,255)]
+        header = self.horizontalHeader()
         for i, board in enumerate(self.gui.hardware.pulseblasters):
             color = colors[i % 2]
             for j, channel in enumerate(board.channels):
@@ -218,6 +257,7 @@ class DigitalTable(HardwareTable):
                     self.insertColumn(n)
                     self.setHorizontalHeaderItem(n, QTableWidgetItem(str(j)))
                     self.setColumnWidth(n, 25)
+                    header.setSectionResizeMode(n, QHeaderView.Fixed)
                     self.colors.append(color)
                     n += 1
 
@@ -245,7 +285,8 @@ class DigitalTable(HardwareTable):
                 self.setItem(row, col, QTableWidgetItem(str(inst.duration)))
 
             else:
-                id, num = self.get_channel_by_col(col, self.gui.hardware.pulseblasters)
+                board, num = self.get_channel_by_col(col, self.gui.hardware.pulseblasters)
+                id = board.board_identifier
                 state = bool(int(inst.digital_pins.get(id)[num]))
                 self.setCellWidget(row, col, TableCheckBox(self, row, col, state))
             self.setRowHeight(row, 25)
@@ -256,15 +297,30 @@ class DigitalTable(HardwareTable):
             for row in range(self.rowCount()):
                 self.cellWidget(row, col).row = row
 
-    def update_digital(self, row, col):
+    def update_digital(self, row, col, state):
         inst = self.gui.proc_params.instructions[row]
-        id, num = self.get_channel_by_col(col, self.gui.hardware.pulseblasters)
+        board, num = self.get_channel_by_col(col, self.gui.hardware.pulseblasters)
+        id = board.board_identifier
         digits = inst.digital_pins.get(id)
-        if digits[num] == '1':
-            inst.digital_pins.update([(id, digits[:num] + '0' + digits[num + 1:])])
-        else:
+        if state:
             inst.digital_pins.update([(id, digits[:num] + '1' + digits[num + 1:])])
+        else:
+            inst.digital_pins.update([(id, digits[:num] + '0' + digits[num + 1:])])
 
+    def set_cells_to_handler(self, val):
+        for index in self.selectedIndexes():
+            row = index.row()
+            col = index.column()
+            if col <= 1:
+                item = QTableWidgetItem(val)
+                item.setBackground(self.colors[col])
+                self.setItem(row, col, item)
+                self.setRowHeight(row, 25)
+            else:
+                state = val.lower() not in ['', '0', 'off', 'none', 'null', 'nan', 'undef', 'undefined']
+                widget = self.cellWidget(row, col)
+                widget.cb.setCheckState(bool_to_checkstate(state))
+                self.update_digital(row, col, state)
 
 class TableCheckBox(QWidget):
     def __init__(self, table, row, col, state):
@@ -272,18 +328,45 @@ class TableCheckBox(QWidget):
         self.table = table
         self.row = row
         self.col = col
-        cb = QCheckBox()
-        cb.setCheckState(bool_to_checkstate(state))
+        self.cb = QCheckBox()
+        self.cb.setCheckState(bool_to_checkstate(state))
         if (col - 2) % 8 < 4:
-            cb.setStyleSheet(load_stylesheet('digital_cb_light.qss'))
+            self.cb.setStyleSheet(load_stylesheet('digital_cb_light.qss'))
         else:
-            cb.setStyleSheet(load_stylesheet('digital_cb_dark.qss'))
-        cb.clicked.connect(self.update_instruction)
+            self.cb.setStyleSheet(load_stylesheet('digital_cb_dark.qss'))
+        self.cb.clicked.connect(self.update_instruction)
         layout = QHBoxLayout(self)
-        layout.addWidget(cb)
+        layout.addWidget(self.cb)
         layout.setAlignment(QtCore.Qt.AlignCenter)
         layout.setContentsMargins(2, 0, 0, 0)
 
     def update_instruction(self):
-        self.table.update_digital(self.row, self.col)
+        print self.cb.isChecked()
+        self.table.update_digital(self.row, self.col, self.cb.isChecked())
 
+class SetToWindow(QDialog):
+    def __init__(self):
+        super(SetToWindow, self).__init__()
+        self.cancelled = True
+        self.layout = QHBoxLayout(self)
+        self.setLayout(self.layout)
+        self.setWindowTitle('Set Selected Cells To')
+
+        self.val = QLineEdit()
+        yes_btn = QPushButton('Yes')
+        no_btn = QPushButton('Cancel')
+
+        yes_btn.clicked.connect(self.confirm)
+        no_btn.clicked.connect(self.cancel)
+
+        self.layout.addWidget(self.val)
+        self.layout.addWidget(yes_btn)
+        self.layout.addWidget(no_btn)
+
+    def confirm(self):
+        self.cancelled = False
+        self.result = str(self.val.text())
+        self.done(0)
+
+    def cancel(self):
+        self.done(0)

@@ -105,6 +105,26 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.plotter = CyclePlotter(self)
 
+        self.digital_table.cellChanged.connect(self.highlight_update_globals)
+        self.analog_table.cellChanged.connect(self.highlight_update_globals)
+        self.novatech_table.cellChanged.connect(self.highlight_update_globals)
+        self.dyn_var_name.textEdited.connect(self.highlight_update_globals)
+        self.dyn_var_start.editingFinished.connect(self.highlight_update_globals)
+        self.dyn_var_end.editingFinished.connect(self.highlight_update_globals)
+        self.dyn_var_default.editingFinished.connect(self.highlight_update_globals)
+        self.dyn_var_log.stateChanged.connect(self.highlight_update_globals)
+        self.dyn_var_send.stateChanged.connect(self.highlight_update_globals)
+        self.new_dyn_var.clicked.connect(self.highlight_update_globals)
+        self.delete_dyn_var.clicked.connect(self.highlight_update_globals)
+        self.new_stat_var.clicked.connect(self.highlight_update_globals)
+        self.delete_stat_var.clicked.connect(self.highlight_update_globals)
+        self.save_button.clicked.connect(self.highlight_update_globals)
+        self.load_button.clicked.connect(self.highlight_update_globals)
+        self.new_procedure_button.clicked.connect(self.highlight_update_globals)
+        self.steps_num.valueChanged.connect(self.highlight_update_globals)
+        self.persistent_cb.stateChanged.connect(self.highlight_update_globals)
+        self.cycle_delay.valueChanged.connect(self.highlight_update_globals)
+
     def copy_inst_handler(self, loc):
         self.clipboard = copy.deepcopy(self.proc_params.instructions[loc])
 

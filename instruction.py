@@ -2,6 +2,8 @@ from cycle import *
 from threading import Thread
 from hardware_types import HardwareSetup
 
+from PyQt5 import QtCore
+
 import time
 
 class Procedure(object):
@@ -40,6 +42,7 @@ class Procedure(object):
         self.gui.worker.start()
         thread.start()
         thread.join()
+        self.gui.worker.wait()
 
 
 class ProcedureParameters(object):
@@ -61,8 +64,6 @@ class ProcedureParameters(object):
                 return False
             for i in range(len(l1)):
                 if not l1[i] == l2[i]:
-                    print l1[i]
-                    print l2[i]
                     return False
         return True
 
@@ -166,15 +167,15 @@ class ProcedureParameters(object):
             inst.set_stepsize(line[2])
 
             for i, board_inst in enumerate([x.strip() for x in line[3].split('\\')]):
-                if pulseblasters[i] in inst.digital_pins:
+                if pulseblasters and pulseblasters[i] in inst.digital_pins:
                     inst.digital_pins.update([(pulseblasters[i], board_inst)])
 
             for i, board_inst in enumerate([x.strip() for x in line[4].split('\\')]):
-                if ni_boards[i] in inst.analog_functions:
+                if ni_boards and ni_boards[i] in inst.analog_functions:
                     inst.analog_functions.update([(ni_boards[i], board_inst.split(' '))])
 
             for i, board_inst in enumerate([x.strip() for x in line[5].split('\\')]):
-                if novatechs[i] in inst.novatech_functions:
+                if novatechs and novatechs[i] in inst.novatech_functions:
                     inst.novatech_functions.update([(novatechs[i], board_inst.split(' '))])
 
     def parse_dyn_var_line(self, f, header, gui):
@@ -275,7 +276,7 @@ class Instruction(object):
         except ValueError:
             pass
 
-    def set_stepsize(self, stepsize):
+    def set_stepsize(self, stepsize,):
         try:
             if float(stepsize) >= 0:
                 self.stepsize = stepsize

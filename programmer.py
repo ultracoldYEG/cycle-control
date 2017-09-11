@@ -131,9 +131,12 @@ class Programmer(object):
     def start_device_handler(self):
         pb_start()
 
-        self.start_all_task_handles()
-        DAQmxWaitUntilTaskDone(self.get_first_task_handle(), self.cycle.analog_domain[-1])  # seconds
-        self.stop_all_task_handles()
+        if self.get_first_task_handle():
+            self.start_all_task_handles()
+            DAQmxWaitUntilTaskDone(self.get_first_task_handle(), self.cycle.analog_domain[-1])  # seconds
+            self.stop_all_task_handles()
+        else:
+            time.sleep(self.cycle.analog_domain[-1])
 
         pb_stop()
 
