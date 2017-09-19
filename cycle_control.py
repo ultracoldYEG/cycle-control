@@ -455,6 +455,11 @@ class Main(QMainWindow, Ui_MainWindow):
                 channel = self.hardware.pulseblasters[board_index].channels[int(item.text(0))]
                 if col == 0:
                     channel.enabled = bool(item.checkState(col))
+            else:
+                board_index = self.digital_hardware_tree.indexOfTopLevelItem(item)
+                board = self.hardware.pulseblasters[board_index]
+                if col == 0:
+                    board.board_identifier = item.text(col)
 
     def analog_tree_change(self, item, col):
         if self.updating.lock:
@@ -473,6 +478,11 @@ class Main(QMainWindow, Ui_MainWindow):
                     channel.max = float(item.text(col))
                 elif col == 4:
                     channel.scaling = item.text(col)
+            else:
+                board_index = self.analog_hardware_tree.indexOfTopLevelItem(item)
+                board = self.hardware.ni_boards[board_index]
+                if col == 0:
+                    board.board_identifier = item.text(col)
 
     def novatech_tree_change(self, item, col):
         if self.updating.lock:
@@ -483,6 +493,11 @@ class Main(QMainWindow, Ui_MainWindow):
                 channel = self.hardware.novatechs[board_index].channels[int(item.text(0))]
                 if col == 0:
                     channel.enabled = bool(item.checkState(col))
+            else:
+                board_index = self.novatech_hardware_tree.indexOfTopLevelItem(item)
+                board = self.hardware.novatechs[board_index]
+                if col == 0:
+                    board.board_identifier = item.text(col)
 
     def checkEdit(self, item, col):
         if item.parent() and col > 0:

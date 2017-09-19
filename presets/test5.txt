@@ -1,0 +1,14 @@
+INSTRUCTIONS
+                                    Name;             Duration;   Stepsize;             Digital Outputs, 0;                                                   Analog Outputs, Dev1; Novatech Outputs
+                                     OFF;                  1.0;     0.0099;       000000000000000000000000;                                             ramp(-0.5,0) 0 0 0 0 0 0 0; 
+                                     OFF;                  1.0;        0.2;       000000000000000000000000;                                           ramp(-0.5,0.5) 0 0 0 0 0 0 0; 
+
+DYNAMIC_PROCESS_VARIABLES
+                                    Name;                Start;                  End;              Default;     Logarithmic;   Send
+
+STATIC_PROCESS_VARIABLES
+                                    Name;                Value
+
+SEQUENCING_PARAMETERS
+     Steps;  Persistent;    Delay
+         1;           0;      0.0

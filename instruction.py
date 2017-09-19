@@ -2,8 +2,6 @@ from cycle import *
 from threading import Thread
 from hardware_types import HardwareSetup
 
-from PyQt5 import QtCore
-
 import time
 
 class Procedure(object):
@@ -18,7 +16,7 @@ class Procedure(object):
         self.current_variables = {}
 
     def start_sequence(self):
-        if len(self.parameters.instructions) <= 1:
+        if len(self.parameters.instructions) < 1:
             print('Put in more instructions')
             return
         with self.run_lock:
@@ -81,6 +79,7 @@ class ProcedureParameters(object):
                 'analog_length': str(70*len(ni_boards)),
                 'novatech_length': str(70*len(novatechs))
             })
+
             f.write('INSTRUCTIONS\n')
             f.write(inst_format.format(
                 'Name',
@@ -101,6 +100,7 @@ class ProcedureParameters(object):
                     ''.join([analog_format.format(*i.analog_functions.get(board)) + ' \\ ' for board in ni_boards])[:-3],
                     ''.join([novatech_format.format(*i.novatech_functions.get(board)) + ' \\ ' for board in novatechs])[:-3]
                 ))
+
             f.write('\nDYNAMIC_PROCESS_VARIABLES\n')
             f.write(dynamic_var_format.format(
                 'Name',
@@ -119,10 +119,12 @@ class ProcedureParameters(object):
                     int(i.logarithmic),
                     int(i.send)
                 ))
+
             f.write('\nSTATIC_PROCESS_VARIABLES\n')
             f.write(static_var_format.format('Name', 'Value'))
             for i in self.static_variables:
                 f.write(static_var_format.format(i.name, i.default))
+
             f.write('\nSEQUENCING_PARAMETERS\n')
             f.write(seq_param_format.format('Steps', 'Persistent', 'Delay'))
             f.write(seq_param_format.format(self.steps, int(self.persistent), self.delay))

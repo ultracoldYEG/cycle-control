@@ -7,8 +7,8 @@ DAQmx_Val_Rising = 'rising'
 DAQmx_Val_FiniteSamps = 'finite'
 DAQmx_Val_GroupByChannel = 'channel'
 
-class taskHandle(object):
-    def __init__(self):
+class TaskHandle(object):
+    def __init__(self, id):
         self.lock = False
 
     def run(self):
@@ -55,7 +55,7 @@ def DAQmxClearTask(taskHandle):
     if taskHandle.lock:
         print 'DAQmx ERROR: locked'
         return
-    taskHandle.__init__()
+    taskHandle.__init__(0)
 
 def DAQmxCreateAOVoltageChan(taskHandle, devices, name , low_bound, high_bound, units, custom_scale_name):
     if taskHandle.lock:

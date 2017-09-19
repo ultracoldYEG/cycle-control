@@ -5,15 +5,6 @@ import copy
 FUNCTION_REGEX = r'^(\w+)\((.*)\)$'
 PULSE_WIDTH = 5e-6
 
-def frange(x, y, jump):
-    if jump == 0:
-        jump = y
-    result = []
-    while x < y:
-        result.append(x)
-        x += jump
-    return result
-
 def replace_bit(bits, i, repl):
     return bits[:i] + repl + bits[i+1:]
 
@@ -59,6 +50,12 @@ class Cycle(object):
         self.create_analog_waveform()
         self.create_novatech_waveform()
         self.create_digital_waveform()
+        self.domain_check()
+
+    def domain_check(self):
+        for i, val in enumerate(self.digital_domain[:-1]):
+            if abs(val - self.digital_domain[i + 1]) < 10 ** -6:
+                raise ValueError, ('value error in domain', i, val, self.digital_domain[i + 1])
 
     def create_analog_waveform(self):
         total_t = 0.0
@@ -70,6 +67,7 @@ class Cycle(object):
                 for channel in range(len(channels)):
                     self.analog_data.get(board)[channel] += waveforms.get(board)[channel]
             total_t += float(inst.duration)
+        print self.analog_domain
 
     def create_novatech_waveform(self):
         total_t = 0.0
@@ -95,6 +93,10 @@ class Cycle(object):
         # TODO include option to select which analog/novatech pins are used
         ANALOG_PINS = [('0', 2)]
         NOVATECH_PINS = [('0', 3)]
+        print domain
+        print self.analog_domain
+        print self.novatech_domain
+
         while True:
             index = next.index(min(next))
 
@@ -110,6 +112,7 @@ class Cycle(object):
                 self.pulse_pins(min(next), current_pins, *NOVATECH_PINS)
                 next[2] = iter_domains[2].next()
 
+            print next, domain[-1], min(next) - domain[-1]
             if min(next) == domain[-1]:
                 self.digital_domain.append(min(next))
                 for board, data in current_pins.iteritems():
@@ -154,15 +157,21 @@ class Cycle(object):
                     print key, 'is not a valid function key'
                     return
 
-        duration = float(inst.duration)
-        stepsize = float(inst.stepsize)
+        duration = int(float(inst.duration) * 10 ** 12)
+        stepsize = int(float(inst.stepsize) * 10 ** 12) or duration
 
         if all((func == constFunc for board, board_funcs in funcs.iteritems() for func, args in board_funcs)):
             domain = [0.0]
         else:
-            domain = frange(0.0, duration, stepsize)
+            domain = range(0, duration, stepsize)
+
+        if duration - domain[-1] < stepsize and len(domain) > 2:
+            del domain[-1]
             
         if self.instructions[-1] == inst:
             domain.append(duration)
+
+        domain = [float(x) / 10 ** 12 for x in domain]
+        duration = float(inst.duration)
 
         return domain, {board: [func(domain, duration, *args) for func, args in board_funcs] for board, board_funcs in funcs.iteritems()}

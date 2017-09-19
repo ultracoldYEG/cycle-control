@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QColor
 from PyQt5 import QtCore
 from PyQt5.QtGui import QCursor
-
+import time
 from helpers import *
 
 class HardwareTable(QTableWidget):
@@ -126,16 +126,37 @@ class AnalogTable(HardwareTable):
             elif col > 2:
                 board, num = self.get_channel_by_col(col, self.gui.hardware.ni_boards)
                 id = board.board_identifier
-                channel = board.channels[num]
-                lims = (channel.min, channel.max)
-                try:
-                    val = float(item)
-                    if val < lims[0] or val > lims[1]:
-                        print 'bad input at: ', row, col
-                        return
+
+                if self.is_valid_input(item, col):
                     inst.analog_functions.get(id)[num] = str(item)
-                except:
-                    inst.analog_functions.get(id)[num] = str(item)
+                else:
+                    message = 'Bad input at: ('+str(row)+', '+str(col)+').'
+                    dialog = WarningWindow(message)
+                    dialog.exec_()
+                    print message
+
+    def is_valid_input(self, item, col):
+        board, num = self.get_channel_by_col(col, self.gui.hardware.ni_boards)
+        channel = board.channels[num]
+        lims = (channel.min, channel.max)
+        try:
+            val = float(item)
+            if val < lims[0] or val > lims[1]:
+                return False
+            return True
+        except:
+            pass
+        for stat_var in self.gui.proc_params.static_variables:
+            if stat_var.name == item:
+                val = float(stat_var.default)
+                if val < lims[0] or val > lims[1]:
+                    return False
+        for dyn_var in self.gui.proc_params.dynamic_variables:
+            if dyn_var.name == item:
+                edge_cases = [float(dyn_var.start), float(dyn_var.end), float(dyn_var.default)]
+                if any([val < lims[0] or val > lims[1] for val in edge_cases]):
+                    return False
+        return True
 
     def insert_row(self, row):
         self.insertRow(row)
@@ -369,4 +390,23 @@ class SetToWindow(QDialog):
         self.done(0)
 
     def cancel(self):
+        self.done(0)
+
+class WarningWindow(QDialog):
+    def __init__(self, msg = 'An error occured.'):
+        super(WarningWindow, self).__init__()
+        self.cancelled = True
+        self.layout = QHBoxLayout(self)
+        self.setLayout(self.layout)
+        self.setWindowTitle('Warning')
+
+        message = QLabel(msg)
+        btn = QPushButton('OK')
+
+        btn.clicked.connect(self.close)
+
+        self.layout.addWidget(message)
+        self.layout.addWidget(btn)
+
+    def close(self):
         self.done(0)
