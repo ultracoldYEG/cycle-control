@@ -15,8 +15,8 @@ class TaskHandle(object):
         self.instructions = []
         self.activated = False
         self.devices = []
-        self.units = 0.0
-        self.volt_limits = [0.0, 0.0]
+        self.units = []
+        self.volt_limits = []
         self.trigger_pin = ''
         self.trigger_mode = ''
         self.trigger_num = 0
@@ -42,14 +42,14 @@ def DAQmxStartTask(taskHandle):
         print 'DAQmx ERROR: cant start while active'
         return
     taskHandle.activated = True
-    print 'DAQmx STARTED: ' + taskHandle.devices
+    print 'DAQmx STARTED: ' + ''.join([' ' + str(x) for x in taskHandle.devices])
 
 def DAQmxStopTask(taskHandle):
     if taskHandle.lock:
         print 'DAQmx ERROR: locked'
         return
     taskHandle.activated = False
-    print 'DAQmx STOPPED: ' + taskHandle.devices
+    print 'DAQmx STOPPED: ' + ''.join([' ' + str(x) for x in taskHandle.devices])
 
 def DAQmxClearTask(taskHandle):
     if taskHandle.lock:
@@ -65,9 +65,9 @@ def DAQmxCreateAOVoltageChan(taskHandle, devices, name , low_bound, high_bound, 
         print 'DAQmx ERROR: cant program while active'
         return
 
-    taskHandle.devices = devices
-    taskHandle.units = units
-    taskHandle.volt_limits = [low_bound, high_bound]
+    taskHandle.devices.append(devices)
+    taskHandle.units.append(units)
+    taskHandle.volt_limits.append([low_bound, high_bound])
 
 def DAQmxCfgSampClkTiming(taskHandle, trigger_pin, rate, trigger_mode, loop_type, trigger_num):
     if taskHandle.lock:
@@ -94,7 +94,7 @@ def DAQmxWriteAnalogF64(taskHandle, num_samples, autostart, timeout, sort_type, 
     taskHandle.timeout = timeout
     taskHandle.sort_type = sort_type
     taskHandle.instructions = analog_data
-    print 'DAQmx programmed: ' + taskHandle.devices
+    print 'DAQmx programmed: ' + ''.join([' ' + str(x) for x in taskHandle.devices])
 
 def DAQmxWaitUntilTaskDone(taskHandle, delay):
     if taskHandle.lock:

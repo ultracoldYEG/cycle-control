@@ -1,6 +1,7 @@
 from cycle import *
 from threading import Thread
 from hardware_types import HardwareSetup
+from helpers import *
 
 import time
 
@@ -243,7 +244,8 @@ class ProcedureParameters(object):
         return start + stepsize * step
 
     def get_total_time(self):
-        return sum([float(x.duration) for x in self.instructions])
+        vars = self.get_default_variables()
+        return sum([parse_arg(x.duration, vars) for x in self.instructions])
 
 class Instruction(object):
     def __init__(self, hardware = HardwareSetup()):
@@ -276,14 +278,14 @@ class Instruction(object):
             if float(duration) >= 0.0:
                 self.duration = duration
         except ValueError:
-            pass
+            self.duration = duration
 
     def set_stepsize(self, stepsize,):
         try:
             if float(stepsize) >= 0:
                 self.stepsize = stepsize
         except ValueError:
-            pass
+            self.stepsize = stepsize
 
     def set_analog_strings(self, string_list):
         self.analog_func_strings = string_list

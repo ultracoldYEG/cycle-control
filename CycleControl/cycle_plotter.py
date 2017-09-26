@@ -1,12 +1,8 @@
-try:
-    from PyQt4.uic import loadUiType
-    from PyQt4 import QtCore
-    from PyQt4.QtGui import *
-except:
-    from PyQt5.uic import loadUiType
-    from PyQt5 import QtCore
-    from PyQt5.QtWidgets import *
-    from PyQt5.QtGui import *
+
+
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import (

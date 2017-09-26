@@ -35,42 +35,32 @@ class Programmer(object):
         self.taskHandles = {}
 
         for board in self.gui.hardware.ni_boards:
-            tasks = []
+            task = TaskHandle(0)
+            DAQmxCreateTask("", task)
             for i, channel in enumerate(board.channels):
                 if not channel.enabled:
-                    tasks.append(None)
                     continue
-                task = TaskHandle(0)
-                DAQmxCreateTask("", task)
+
                 physical_channel = board.board_identifier + '/ao' + str(i) # "Dev3/ao6:7"
                 DAQmxCreateAOVoltageChan(task, physical_channel, "", channel.min, channel.max, DAQmx_Val_Volts, None)
-                tasks.append(task)
-            self.taskHandles.update([(board.board_identifier, tasks)])
+            self.taskHandles.update([(board.board_identifier, task)])
 
     def start_all_task_handles(self):
-        for board, tasks in self.taskHandles.iteritems():
-            for task in tasks:
-                if task:
-                    DAQmxStartTask(task)
+        for board, task in self.taskHandles.iteritems():
+            DAQmxStartTask(task)
 
     def stop_all_task_handles(self):
-        for board, tasks in self.taskHandles.iteritems():
-            for task in tasks:
-                if task:
-                    DAQmxStopTask(task)
+        for board, task in self.taskHandles.iteritems():
+            DAQmxStopTask(task)
 
     def clear_all_task_handles(self):
-        for board, tasks in self.taskHandles.iteritems():
-            for task in tasks:
-                if task:
-                    DAQmxStopTask(task)
-                    DAQmxClearTask(task)
+        for board, task in self.taskHandles.iteritems():
+            DAQmxStopTask(task)
+            DAQmxClearTask(task)
 
     def get_first_task_handle(self):
-        for board, tasks in self.taskHandles.iteritems():
-            for task in tasks:
-                if task:
-                    return task
+        for board, task in self.taskHandles.iteritems():
+            return task
 
     def program_device_handler(self, cycle):
         pb_stop()
@@ -98,21 +88,26 @@ class Programmer(object):
             pb_stop_programming()
 
     def program_NI(self):
-        for board, tasks in self.taskHandles.iteritems():
-            analog_board_data = self.cycle.analog_data.get(board)
-            for i, task in enumerate(tasks):
-                if task:
-                    data = np.array(analog_board_data[i], dtype=np.float64)[:-1]
-                    num_samples = len(data)
-                    DAQmxCfgSampClkTiming(task, "/Dev1/PFI0", 10000.0, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, num_samples)
-                    DAQmxWriteAnalogF64(task, num_samples, 0, 10.0, DAQmx_Val_GroupByChannel, data, None, None)
+        for board in self.gui.hardware.ni_boards:
+            id = board.board_identifier
+            analog_board_data = self.cycle.analog_data.get(id)
+            task = self.taskHandles.get(id)
+            data = []
+            for i, channel in enumerate(board.channels):
+                if channel.enabled:
+                    data += analog_board_data[i][:-1]
+            num_samples = len(analog_board_data[0]) - 1
+            DAQmxCfgSampClkTiming(task, board.board_identifier + "/PFI0", 10000.0, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, num_samples)
+            DAQmxWriteAnalogF64(task, num_samples, 0, 10.0, DAQmx_Val_GroupByChannel, data, None, None)
 
     def program_novatech(self):
         for board, vals in self.cycle.novatech_data.iteritems():
             print 'programming: ', board
-            with serial.Serial('COM1', baudrate=19200, timeout=20.0) as nova_device:
-                nova_device.write('M 0\n'.encode('utf-8'))  # setting mode to table enter mode
-                for sample in range(len(vals[0])):
+            with serial.Serial(board, baudrate=19200, timeout=20.0) as nova_device:
+                nova_device.write('M 0\n'.encode('utf-8'))  # entering table writing mode
+                init = time.time()
+                out = ''
+                for sample in range(len(vals[0]) - 1):
                     for channel in range(len(vals)/3):
 
                         addr = np.base_repr(int(sample), 16).zfill(4)
@@ -120,15 +115,17 @@ class Programmer(object):
                         freq = np.base_repr(int(vals[3 * channel + 1][sample] * 1e6 / 0.1), 16).zfill(8)
                         phase = np.base_repr(int(vals[3 * channel + 2][sample]), 16).zfill(4)
 
-                        out =  't{0:1.1} {1:4.4} {2:8.8},{3:4.4},{4:4.4},{5:2.2}'.format(str(channel), addr,  freq, phase, amp, '00')
-
-                        print out
+                        out += 't{0:1.1} {1:4.4} {2:8.8},{3:4.4},{4:4.4},{5:2.2}\n'.format(str(channel), addr,  freq, phase, amp, 'FF')
 
                         #tn 3fff aabbccdd,eeff,gghh,ii
                         #channel , address, freq, phase, amp, dwell
                         #TODO proper dwell time setting for external triggering?
 
                         #convert V to dBm: dBm = 10 * log_10 ( V_RMS^2 / (50ohm * 1mW) )
+                print time.time() - init
+                nova_device.write(out.encode('utf-8'))
+                print time.time() - init
+                nova_device.write('M t\n'.encode('utf-8'))  # finished writing table
 
     def start_device_handler(self):
         if self.get_first_task_handle():

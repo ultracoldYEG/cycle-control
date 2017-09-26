@@ -1,38 +1,8 @@
 from user_functions import *
-import re
+from helpers import *
 import copy
 
-FUNCTION_REGEX = r'^(\w+)\((.*)\)$'
 PULSE_WIDTH = 5e-6
-
-def replace_bit(bits, i, repl):
-    return bits[:i] + repl + bits[i+1:]
-
-def parse_function(string, variables):
-    result = re.match(FUNCTION_REGEX, string)
-    if result:
-        key = result.group(1)
-        args = [parse_arg(x.strip(), variables) for x in result.group(2).split(',')]
-        if any([arg is None for arg in args]):
-            print('Invalid function syntax: ', string)
-            return None, None
-        return key, args
-
-    args = [parse_arg(string, variables)]
-    if args:
-        return 'const', args
-
-    print('Invalid function syntax: ', string)
-    return None, None
-
-def parse_arg(arg, variables):
-    if arg in variables:
-        return variables.get(arg)
-    try:
-        arg = float(arg)
-        return arg
-    except ValueError:
-        print('Couldnt parse argument ', arg)
 
 class Cycle(object):
     def __init__(self, instructions, variables):
@@ -66,8 +36,7 @@ class Cycle(object):
             for board, channels in waveforms.iteritems():
                 for channel in range(len(channels)):
                     self.analog_data.get(board)[channel] += waveforms.get(board)[channel]
-            total_t += float(inst.duration)
-        print self.analog_domain
+            total_t += parse_arg(inst.duration, self.variables)
 
     def create_novatech_waveform(self):
         total_t = 0.0
@@ -79,12 +48,12 @@ class Cycle(object):
                 for channel in range(len(channels)):
                     self.novatech_data.get(board)[channel] += waveforms.get(board)[channel]
 
-            total_t += float(inst.duration)
+            total_t += parse_arg(inst.duration, self.variables)
 
     def create_digital_waveform(self):
         domain = [0.0]
         for inst in self.instructions:
-            domain.append(domain[-1] + float(inst.duration))
+            domain.append(domain[-1] + parse_arg(inst.duration, self.variables))
 
         iter_pins = iter([copy.copy(inst.digital_pins) for inst in self.instructions])
         iter_domains = [iter(domain), iter(self.analog_domain), iter(self.novatech_domain)]
@@ -93,9 +62,6 @@ class Cycle(object):
         # TODO include option to select which analog/novatech pins are used
         ANALOG_PINS = [('0', 2)]
         NOVATECH_PINS = [('0', 3)]
-        print domain
-        print self.analog_domain
-        print self.novatech_domain
 
         while True:
             index = next.index(min(next))
@@ -112,7 +78,6 @@ class Cycle(object):
                 self.pulse_pins(min(next), current_pins, *NOVATECH_PINS)
                 next[2] = iter_domains[2].next()
 
-            print next, domain[-1], min(next) - domain[-1]
             if min(next) == domain[-1]:
                 self.digital_domain.append(min(next))
                 for board, data in current_pins.iteritems():
@@ -157,21 +122,20 @@ class Cycle(object):
                     print key, 'is not a valid function key'
                     return
 
-        duration = int(float(inst.duration) * 10 ** 12)
-        stepsize = int(float(inst.stepsize) * 10 ** 12) or duration
+        duration = parse_arg(inst.duration, self.variables)
+        stepsize = parse_arg(inst.stepsize, self.variables)
 
         if all((func == constFunc for board, board_funcs in funcs.iteritems() for func, args in board_funcs)):
             domain = [0.0]
         else:
-            domain = range(0, duration, stepsize)
+            domain = range(0, int(duration * 10 ** 12),  int(stepsize * 10 ** 12))
 
         if duration - domain[-1] < stepsize and len(domain) > 2:
             del domain[-1]
             
         if self.instructions[-1] == inst:
-            domain.append(duration)
+            domain.append(int(duration * 10 ** 12))
 
         domain = [float(x) / 10 ** 12 for x in domain]
-        duration = float(inst.duration)
 
         return domain, {board: [func(domain, duration, *args) for func, args in board_funcs] for board, board_funcs in funcs.iteritems()}

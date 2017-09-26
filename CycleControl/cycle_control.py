@@ -1,16 +1,17 @@
 
 import sys
-
+from PyQt5.uic import loadUiType
 from hardware_types import *
 from helpers import *
 from instruction import *
 from programmer import *
-from staging_tables import *
 from cycle_plotter import *
+
+from widgets import *
 
 ROOT_PATH = os.getcwd()
 
-Ui_MainWindow, QMainWindow = loadUiType(os.path.join(ROOT_PATH, 'cycle_control.ui'))
+Ui_MainWindow, QMainWindow = loadUiType(os.path.join(ROOT_PATH, 'CycleControl', 'cycle_control.ui'))
 
 
 class Main(QMainWindow, Ui_MainWindow):
@@ -31,17 +32,17 @@ class Main(QMainWindow, Ui_MainWindow):
         self.clipboard = None
 
         # ------ Instruction GUI ---------
-        self.digital_table = DigitalTable(self)
+        self.digital_table = staging_tables.DigitalTable(self)
         self.digital_tab.layout = QVBoxLayout(self.digital_tab)
         self.digital_tab.layout.addWidget(self.digital_table)
         self.digital_tab.setLayout(self.digital_tab.layout)
 
-        self.analog_table = AnalogTable(self)
+        self.analog_table = staging_tables.AnalogTable(self)
         self.analog_tab.layout = QVBoxLayout(self.analog_tab)
         self.analog_tab.layout.addWidget(self.analog_table)
         self.analog_tab.setLayout(self.analog_tab.layout)
 
-        self.novatech_table = NovatechTable(self)
+        self.novatech_table = staging_tables.NovatechTable(self)
         self.novatech_tab.layout = QVBoxLayout(self.novatech_tab)
         self.novatech_tab.layout.addWidget(self.novatech_table)
         self.novatech_tab.setLayout(self.novatech_tab.layout)

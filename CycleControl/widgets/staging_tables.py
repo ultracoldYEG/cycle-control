@@ -1,9 +1,8 @@
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QCursor
 from PyQt5 import QtCore
-from PyQt5.QtGui import QCursor
-import time
-from helpers import *
+
+from CycleControl.helpers import *
 
 class HardwareTable(QTableWidget):
     def __init__(self, gui):
