@@ -39,9 +39,9 @@ def parse_function(string, variables):
             return None, None
         return key, args
 
-    args = [parse_arg(string, variables)]
-    if args:
-        return 'const', args
+    args = parse_arg(string, variables)
+    if args is not None:
+        return 'const', [args]
 
     print('Invalid function syntax: ', string)
     return None, None
@@ -54,3 +54,9 @@ def parse_arg(arg, variables):
         return arg
     except ValueError:
         print('Couldnt parse argument ', arg)
+        return None
+
+def force_even(data):
+    if len(data) % 2 == 1:
+        return data[:-1]
+    return data

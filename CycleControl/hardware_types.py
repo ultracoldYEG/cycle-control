@@ -56,7 +56,6 @@ class HardwareSetup(object):
             channel = nova.channels[int(line[0])]
             channel.enabled = bool(int(line[1]))
 
-
     def save_hardware_file(self, fp):
         with open(fp, 'w+') as f:
             pb_format = ' {:>8}; {:>8}\n'

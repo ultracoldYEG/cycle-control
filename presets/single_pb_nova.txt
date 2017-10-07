@@ -1,0 +1,14 @@
+INSTRUCTIONS
+                                    Name;             Duration;   Stepsize;             Digital Outputs, 0; Analog Outputs;                                                 Novatech Outputs, COM5
+                                     OFF;                    1;        0.0;       000000000000000000000000; ;                                            300 5.0 0 0 0 0 0 0 0 0 0 0
+                                      ON;                    1;        0.0;       111111111111111111111111; ;                                           300 10.0 0 0 0 0 0 0 0 0 0 0
+
+DYNAMIC_PROCESS_VARIABLES
+                                    Name;                Start;                  End;              Default;     Logarithmic;   Send
+
+STATIC_PROCESS_VARIABLES
+                                    Name;                Value
+
+SEQUENCING_PARAMETERS
+     Steps;  Persistent;    Delay
+         1;           0;      0.0

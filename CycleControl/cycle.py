@@ -130,12 +130,11 @@ class Cycle(object):
         else:
             domain = range(0, int(duration * 10 ** 12),  int(stepsize * 10 ** 12))
 
-        if duration - domain[-1] < stepsize and len(domain) > 2:
+        if duration * 10 ** 12 - domain[-1] < stepsize and len(domain) > 2:
             del domain[-1]
             
-        if self.instructions[-1] == inst:
+        if id(self.instructions[-1]) == id(inst):
             domain.append(int(duration * 10 ** 12))
 
         domain = [float(x) / 10 ** 12 for x in domain]
-
         return domain, {board: [func(domain, duration, *args) for func, args in board_funcs] for board, board_funcs in funcs.iteritems()}
