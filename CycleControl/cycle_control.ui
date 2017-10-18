@@ -398,144 +398,45 @@ QPushButton:pressed {background-color: rgb(170, 190, 255)}</string>
               <layout class="QVBoxLayout" name="verticalLayout_13">
                <item>
                 <layout class="QGridLayout" name="gridLayout_13">
-                 <item row="1" column="1">
-                  <widget class="QTreeWidget" name="analog_hardware_tree">
-                   <property name="styleSheet">
-                    <string notr="true">QTreeWidget::item {color: #000000;}
-QTreeWidget::indicator:checked {background-color: #55FF00;}
-QTreeWidget::indicator:checked:hover {background-color: #BBFF00;}
-QTreeWidget::indicator:unchecked {background-color: #DDDDDD;}
-QTreeWidget::indicator:unchecked:hover {background-color: #AAAAAA;}</string>
-                   </property>
-                   <property name="alternatingRowColors">
-                    <bool>true</bool>
-                   </property>
-                   <attribute name="headerDefaultSectionSize">
-                    <number>80</number>
-                   </attribute>
-                   <attribute name="headerHighlightSections">
-                    <bool>false</bool>
-                   </attribute>
-                   <attribute name="headerShowSortIndicator" stdset="0">
-                    <bool>false</bool>
-                   </attribute>
-                   <attribute name="headerStretchLastSection">
-                    <bool>true</bool>
-                   </attribute>
-                   <column>
-                    <property name="text">
-                     <string>Virtual Channel</string>
-                    </property>
-                   </column>
-                   <column>
-                    <property name="text">
-                     <string>Label</string>
-                    </property>
-                   </column>
-                   <column>
-                    <property name="text">
-                     <string>Min</string>
-                    </property>
-                   </column>
-                   <column>
-                    <property name="text">
-                     <string>Max</string>
-                    </property>
-                   </column>
-                   <column>
-                    <property name="text">
-                     <string>Scaling</string>
-                    </property>
-                   </column>
-                  </widget>
-                 </item>
-                 <item row="2" column="0">
+                 <item row="1" column="0">
                   <widget class="QPushButton" name="new_pulseblaster_button">
                    <property name="text">
                     <string>New Pulseblaster Board</string>
                    </property>
                   </widget>
                  </item>
-                 <item row="1" column="0">
-                  <widget class="QTreeWidget" name="digital_hardware_tree">
-                   <property name="styleSheet">
-                    <string notr="true">QTreeWidget::item {color: #000000;}
-QTreeWidget::indicator:checked {background-color: #55FF00;}
-QTreeWidget::indicator:checked:hover {background-color: #BBFF00;}
-QTreeWidget::indicator:unchecked {background-color: #DDDDDD;}
-QTreeWidget::indicator:unchecked:hover {background-color: #AAAAAA;}</string>
-                   </property>
-                   <property name="alternatingRowColors">
-                    <bool>true</bool>
-                   </property>
-                   <column>
-                    <property name="text">
-                     <string>Channel</string>
-                    </property>
-                   </column>
-                   <column>
-                    <property name="text">
-                     <string>Analog Pin</string>
-                    </property>
-                   </column>
-                   <column>
-                    <property name="text">
-                     <string>Novatech Pin</string>
-                    </property>
-                   </column>
-                  </widget>
-                 </item>
-                 <item row="2" column="2">
+                 <item row="1" column="2">
                   <widget class="QPushButton" name="new_novatech_button">
                    <property name="text">
                     <string>New Novatech Board</string>
                    </property>
                   </widget>
                  </item>
-                 <item row="2" column="1">
+                 <item row="1" column="1">
                   <widget class="QPushButton" name="new_ni_button">
                    <property name="text">
                     <string>New NI Board</string>
                    </property>
                   </widget>
                  </item>
-                 <item row="1" column="2">
-                  <widget class="QTreeWidget" name="novatech_hardware_tree">
-                   <property name="styleSheet">
-                    <string notr="true">QTreeWidget::item {color: #000000;}
-QTreeWidget::indicator:checked {background-color: #55FF00;}
-QTreeWidget::indicator:checked:hover {background-color: #BBFF00;}
-QTreeWidget::indicator:unchecked {background-color: #DDDDDD;}
-QTreeWidget::indicator:unchecked:hover {background-color: #AAAAAA;}</string>
-                   </property>
-                   <property name="alternatingRowColors">
-                    <bool>true</bool>
-                   </property>
-                   <column>
-                    <property name="text">
-                     <string>Channel</string>
-                    </property>
-                   </column>
-                  </widget>
-                 </item>
-                 <item row="3" column="1">
+                 <item row="2" column="1">
                   <widget class="QPushButton" name="remove_ni_button">
                    <property name="text">
                     <string>Remove Selected Board</string>
                    </property>
                   </widget>
                  </item>
-                 <item row="3" column="0">
-                  <widget class="QPushButton" name="remove_pulseblaster_button">
-                   <property name="text">
-                    <string>Remove Selected Board</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="3" column="2">
+                 <item row="2" column="2">
                   <widget class="QPushButton" name="remove_novatech_button">
                    <property name="text">
                     <string>Remove Novatech Board</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QPushButton" name="remove_pulseblaster_button">
+                   <property name="text">
+                    <string>Remove Selected Board</string>
                    </property>
                   </widget>
                  </item>

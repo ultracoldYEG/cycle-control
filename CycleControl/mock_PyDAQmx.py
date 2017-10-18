@@ -6,6 +6,7 @@ DAQmx_Val_Volts = 1.0
 DAQmx_Val_Rising = 'rising'
 DAQmx_Val_FiniteSamps = 'finite'
 DAQmx_Val_GroupByChannel = 'channel'
+DAQmx_Val_FromCustomScale = 'custom'
 
 class TaskHandle(object):
     def __init__(self, id):
@@ -16,6 +17,7 @@ class TaskHandle(object):
         self.activated = False
         self.devices = []
         self.units = []
+        self.custom_units = ''
         self.volt_limits = []
         self.trigger_pin = ''
         self.trigger_mode = ''
@@ -103,3 +105,10 @@ def DAQmxWaitUntilTaskDone(taskHandle, delay):
     taskHandle.lock = True
     time.sleep(delay)
     taskHandle.lock = False
+
+def DAQmxGetSysScales(buffer_string, buffer):
+    sample_output = 'TEST_SCALE, TEST_SCALE2\x00'
+    return sample_output + buffer_string[len(sample_output):]
+
+def DAQmxSetAOCustomScaleName(taskHandle, channel, name):
+    taskHandle.custom_units = name

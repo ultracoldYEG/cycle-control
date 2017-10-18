@@ -87,14 +87,17 @@ class HardwareSetup(object):
                 for i, channel in enumerate(board.channels):
                     f.write(nova_format.format(i, int(channel.enabled)))
 
+
 class Board (object):
     def __init__(self, id):
         self.board_identifier = id
         self.channels = []
 
+
 class Channel(object):
     def __init__(self):
         self.enabled = False
+
 
 class PulseBlasterBoard(Board):
     def __init__(self, num):
@@ -109,10 +112,12 @@ class PulseBlasterChannel(Channel):
         super(PulseBlasterChannel, self).__init__()
         self.enabled = False
 
+
 class NIBoard(Board):
     def __init__(self, id):
         super(NIBoard, self).__init__(id)
         self.channels = [VirtualNIChannel() for x in range(8)]
+
 
 class VirtualNIChannel(Channel):
     def __init__(self):
@@ -120,13 +125,14 @@ class VirtualNIChannel(Channel):
         self.label = ''
         self.min = -1.0
         self.max = 1.0
-        self.scaling = (1.0, 0.0)
+        self.scaling = ''
 
 
 class NovatechBoard(Board):
     def __init__(self, port):
         super(NovatechBoard, self).__init__(port)
         self.channels = [NovatechChannel() for x in range(4)]
+
 
 class NovatechChannel(Channel):
     def __init__(self):

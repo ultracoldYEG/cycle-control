@@ -9,6 +9,8 @@ from cycle_plotter import *
 
 from widgets import *
 
+from PyQt5.QtWidgets import QComboBox
+
 ROOT_PATH = os.getcwd()
 
 Ui_MainWindow, QMainWindow = loadUiType(os.path.join(ROOT_PATH, 'CycleControl', 'cycle_control.ui'))
@@ -73,6 +75,14 @@ class Main(QMainWindow, Ui_MainWindow):
         self.save_hardware_button.clicked.connect(self.save_hardware)
         self.new_hardware_button.clicked.connect(self.new_hardware)
 
+        self.digital_tree = hardware_trees.DigitalTree(self)
+        self.analog_tree = hardware_trees.AnalogTree(self)
+        self.novatech_tree = hardware_trees.NovatechTree(self)
+
+        self.gridLayout_13.addWidget(self.digital_tree, 1, 0)
+        self.gridLayout_13.addWidget(self.analog_tree, 1, 1)
+        self.gridLayout_13.addWidget(self.novatech_tree, 1, 2)
+
         self.new_pulseblaster_button.clicked.connect(self.new_pb_handler)
         self.remove_pulseblaster_button.clicked.connect(self.remove_pb_handler)
 
@@ -81,13 +91,6 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.new_novatech_button.clicked.connect(self.new_novatech_handler)
         self.remove_novatech_button.clicked.connect(self.remove_novatech_handler)
-
-        self.digital_hardware_tree.itemChanged.connect(self.digital_tree_change)
-        self.analog_hardware_tree.itemChanged.connect(self.analog_tree_change)
-        self.novatech_hardware_tree.itemChanged.connect(self.novatech_tree_change)
-
-        self.analog_hardware_tree.itemDoubleClicked.connect(self.checkEdit)
-        self.analog_hardware_tree.setEditTriggers(self.analog_hardware_tree.NoEditTriggers)
 
         # ------ Header GUI ---------
         self.start_device_button.clicked.connect(self.start_device_handler)
@@ -366,145 +369,46 @@ class Main(QMainWindow, Ui_MainWindow):
     def new_pb_handler(self):
         pb = PulseBlasterBoard(str(len(self.hardware.pulseblasters)))
         self.hardware.pulseblasters.append(pb)
-        self.redraw_digital_hardware()
+        self.digital_tree.redraw()
 
     def remove_pb_handler(self):
-        if not self.digital_hardware_tree.currentItem().parent():
-            index = self.digital_hardware_tree.currentIndex().row()
+        item = self.digital_tree.currentItem()
+        if item and not item.parent():
+            index = self.digital_tree.currentIndex().row()
             del self.hardware.pulseblasters[index]
-            self.redraw_digital_hardware()
+            self.digital_tree.redraw()
 
     def new_ni_handler(self):
         ni = NIBoard('Dev' + str(len(self.hardware.ni_boards)))
         self.hardware.ni_boards.append(ni)
-        self.redraw_analog_hardware()
+        self.analog_tree.redraw()
 
     def remove_ni_handler(self):
-        if not self.analog_hardware_tree.currentItem().parent():
-            index = self.analog_hardware_tree.currentIndex().row()
+        item = self.analog_tree.currentItem()
+        if item and not item.parent():
+            index = self.analog_tree.currentIndex().row()
             del self.hardware.ni_boards[index]
-            self.redraw_analog_hardware()
+            self.analog_tree.redraw()
 
     def new_novatech_handler(self):
         nova = NovatechBoard('COM' + str(len(self.hardware.novatechs)))
         self.hardware.novatechs.append(nova)
-        self.redraw_novatech_hardware()
+        self.novatech_tree.redraw()
 
     def remove_novatech_handler(self):
-        if not self.novatech_hardware_tree.currentItem().parent():
-            index = self.novatech_hardware_tree.currentIndex().row()
+        item = self.novatech_tree.currentItem()
+        if item and not item.parent():
+            index = self.novatech_tree.currentIndex().row()
             del self.hardware.novatechs[index]
-            self.redraw_novatech_hardware()
+            self.novatech_tree.redraw()
 
     def redraw_hardware(self):
-        self.redraw_analog_hardware()
-        self.redraw_digital_hardware()
-        self.redraw_novatech_hardware()
+        self.digital_tree.redraw()
+        self.analog_tree.redraw()
+        self.novatech_tree.redraw()
         self.analog_table.redraw_cols()
         self.novatech_table.redraw_cols()
         self.digital_table.redraw_cols()
-
-    def redraw_analog_hardware(self):
-        with self.updating:
-            root = self.analog_hardware_tree
-            for i in range(root.topLevelItemCount()):
-                root.takeTopLevelItem(0)
-            for board in self.hardware.ni_boards:
-                board_root = QTreeWidgetItem(root, [board.board_identifier])
-                board_root.setFlags(board_root.flags() | QtCore.Qt.ItemIsEditable)
-                for i, channel in enumerate(board.channels):
-                    item = QTreeWidgetItem(board_root, [str(i)])
-                    item.setData(1, QtCore.Qt.DisplayRole, channel.label)
-                    item.setData(2, QtCore.Qt.DisplayRole, channel.min)
-                    item.setData(3, QtCore.Qt.DisplayRole, channel.max)
-                    item.setData(4, QtCore.Qt.DisplayRole, channel.scaling)
-                    item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
-                    item.setCheckState(0, bool_to_checkstate(channel.enabled))
-
-    def redraw_digital_hardware(self):
-        with self.updating:
-            root = self.digital_hardware_tree
-            for i in range(root.topLevelItemCount()):
-                root.takeTopLevelItem(0)
-            for board in self.hardware.pulseblasters:
-                board_root = QTreeWidgetItem(root, [board.board_identifier])
-                board_root.setData(1, QtCore.Qt.DisplayRole, board.analog_pin)
-                board_root.setData(2, QtCore.Qt.DisplayRole, board.novatech_pin)
-                board_root.setFlags(board_root.flags() | QtCore.Qt.ItemIsEditable)
-                for i, channel in enumerate(board.channels):
-                    item = QTreeWidgetItem(board_root, [str(i)])
-                    item.setCheckState(0, bool_to_checkstate(channel.enabled))
-
-    def redraw_novatech_hardware(self):
-        with self.updating:
-            root = self.novatech_hardware_tree
-            for i in range(root.topLevelItemCount()):
-                root.takeTopLevelItem(0)
-            for board in self.hardware.novatechs:
-                board_root = QTreeWidgetItem(root, [board.board_identifier])
-                board_root.setFlags(board_root.flags() | QtCore.Qt.ItemIsEditable)
-                for i, channel in enumerate(board.channels):
-                    item = QTreeWidgetItem(board_root, [str(i)])
-                    item.setCheckState(0, bool_to_checkstate(channel.enabled))
-
-    def digital_tree_change(self, item, col):
-        if self.updating.lock:
-            return
-        with self.updating:
-            if item.parent():
-                board_index = self.digital_hardware_tree.indexOfTopLevelItem(item.parent())
-                channel = self.hardware.pulseblasters[board_index].channels[int(item.text(0))]
-                if col == 0:
-                    channel.enabled = bool(item.checkState(col))
-            else:
-                board_index = self.digital_hardware_tree.indexOfTopLevelItem(item)
-                board = self.hardware.pulseblasters[board_index]
-                if col == 0:
-                    board.board_identifier = item.text(col)
-
-    def analog_tree_change(self, item, col):
-        if self.updating.lock:
-            return
-        with self.updating:
-            if item.parent():
-                board_index = self.analog_hardware_tree.indexOfTopLevelItem(item.parent())
-                channel = self.hardware.ni_boards[board_index].channels[int(item.text(0))]
-                if col == 0:
-                    channel.enabled = bool(item.checkState(col))
-                elif col == 1:
-                    channel.label = item.text(col)
-                elif col == 2:
-                    channel.min = float(item.text(col))
-                elif col == 3:
-                    channel.max = float(item.text(col))
-                elif col == 4:
-                    channel.scaling = item.text(col)
-            else:
-                board_index = self.analog_hardware_tree.indexOfTopLevelItem(item)
-                board = self.hardware.ni_boards[board_index]
-                if col == 0:
-                    board.board_identifier = item.text(col)
-
-    def novatech_tree_change(self, item, col):
-        if self.updating.lock:
-            return
-        with self.updating:
-            if item.parent():
-                board_index = self.novatech_hardware_tree.indexOfTopLevelItem(item.parent())
-                channel = self.hardware.novatechs[board_index].channels[int(item.text(0))]
-                if col == 0:
-                    channel.enabled = bool(item.checkState(col))
-            else:
-                board_index = self.novatech_hardware_tree.indexOfTopLevelItem(item)
-                board = self.hardware.novatechs[board_index]
-                if col == 0:
-                    board.board_identifier = item.text(col)
-
-    def checkEdit(self, item, col):
-        if item.parent() and col > 0:
-            self.analog_hardware_tree.editItem(item, col)
-        elif not item.parent() and col == 0:
-            self.analog_hardware_tree.editItem(item, col)
 
     def start_device_handler(self):
         if self.procedure.run_lock.running:

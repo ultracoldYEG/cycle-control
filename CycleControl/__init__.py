@@ -7,6 +7,6 @@ import instruction
 import mock_PyDAQmx
 import mock_spinapi
 import programmer
-#import spinapi
+# import spinapi
 import user_functions
 import widgets
