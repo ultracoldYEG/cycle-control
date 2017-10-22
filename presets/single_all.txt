@@ -1,14 +1,105 @@
-INSTRUCTIONS
-                                    Name;             Duration;   Stepsize;             Digital Outputs, 0;                                                   Analog Outputs, Dev1;                                                 Novatech Outputs, COM0
-                                     OFF;                    1;        0.0;       000000000000000000000000;                                                     -0.5 0 0 0 0 0 0 0;                                            300 0.4 0 0 0 0 0 0 0 0 0 0
-                                      ON;                    1;        0.0;       111111111111111111111111;                                                      0.5 0 0 0 0 0 0 0;                                            500 0.8 0 0 0 0 0 0 0 0 0 0
-
-DYNAMIC_PROCESS_VARIABLES
-                                    Name;                Start;                  End;              Default;     Logarithmic;   Send
-
-STATIC_PROCESS_VARIABLES
-                                    Name;                Value
-
-SEQUENCING_PARAMETERS
-     Steps;  Persistent;    Delay
-         1;           0;      0.0
+{
+  "sequencing_parameters": {
+    "steps": 1, 
+    "persistent": false, 
+    "delay": 0.0
+  }, 
+  "dynamic_variables": [], 
+  "static_variables": [], 
+  "instructions": [
+    {
+      "name": "OFF", 
+      "duration": "1", 
+      "stepsize": "0.0", 
+      "digital_pins": {
+        "1": "000000000000000000000000", 
+        "0": "000000000000000000000000"
+      }, 
+      "analog_functions": {
+        "Dev1": [
+          "-0.5", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ], 
+        "Dev0": [
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }, 
+      "novatech_functions": {
+        "COM0": [
+          "300", 
+          "0.4", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }
+    }, 
+    {
+      "name": "ON", 
+      "duration": "1", 
+      "stepsize": "0.0", 
+      "digital_pins": {
+        "1": "000000000000000000000000", 
+        "0": "111111111111111111111111"
+      }, 
+      "analog_functions": {
+        "Dev1": [
+          "0.5", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ], 
+        "Dev0": [
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }, 
+      "novatech_functions": {
+        "COM0": [
+          "500", 
+          "0.8", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }
+    }
+  ]
+}

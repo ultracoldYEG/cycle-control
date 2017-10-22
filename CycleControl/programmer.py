@@ -43,11 +43,11 @@ class Programmer(object):
                     continue
 
                 scale = DAQmx_Val_FromCustomScale if channel.scaling else DAQmx_Val_Volts
-                physical_channel = board.board_identifier + '/ao' + str(i) # "Dev3/ao6:7"
+                physical_channel = board.id + '/ao' + str(i) # "Dev3/ao6:7"
                 DAQmxCreateAOVoltageChan(task, physical_channel, "", channel.min, channel.max, scale, None)
                 if channel.scaling:
                     DAQmxSetAOCustomScaleName(task, physical_channel, channel.scaling)
-            self.taskHandles.update([(board.board_identifier, task)])
+            self.taskHandles.update([(board.id, task)])
 
     def start_all_task_handles(self):
         for board, task in self.taskHandles.iteritems():
@@ -93,7 +93,7 @@ class Programmer(object):
 
     def program_NI(self):
         for board in self.gui.hardware.ni_boards:
-            id = board.board_identifier
+            id = board.id
             analog_board_data = self.cycle.analog_data.get(id)
             task = self.taskHandles.get(id)
             data = []
@@ -104,7 +104,7 @@ class Programmer(object):
                     data += force_even(analog_board_data[i][:-1])
 
             data = np.array(data, dtype=np.float64)
-            DAQmxCfgSampClkTiming(task, "/"+board.board_identifier + "/PFI0", 10000.0, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, num_samples)
+            DAQmxCfgSampClkTiming(task, "/"+board.id + "/PFI0", 10000.0, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, num_samples)
             DAQmxWriteAnalogF64(task, num_samples, 0, 10.0, DAQmx_Val_GroupByChannel, data, None, None)
 
 

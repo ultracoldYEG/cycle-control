@@ -79,9 +79,9 @@ class Main(QMainWindow, Ui_MainWindow):
         self.analog_tree = hardware_trees.AnalogTree(self)
         self.novatech_tree = hardware_trees.NovatechTree(self)
 
-        self.gridLayout_13.addWidget(self.digital_tree, 1, 0)
-        self.gridLayout_13.addWidget(self.analog_tree, 1, 1)
-        self.gridLayout_13.addWidget(self.novatech_tree, 1, 2)
+        self.gridLayout_13.addWidget(self.digital_tree, 0, 0)
+        self.gridLayout_13.addWidget(self.analog_tree, 0, 1)
+        self.gridLayout_13.addWidget(self.novatech_tree, 0, 2)
 
         self.new_pulseblaster_button.clicked.connect(self.new_pb_handler)
         self.remove_pulseblaster_button.clicked.connect(self.remove_pb_handler)

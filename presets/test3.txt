@@ -1,15 +1,152 @@
-INSTRUCTIONS
-                                    Name;             Duration;   Stepsize;                                        Digital Outputs, 0, 1;                                                                                                                   Analog Outputs, Dev0, Dev1;                                                 Novatech Outputs, COM0
-                           Instruction 1;                    1;        0.2;          100100000000000000000000 \ 010101010101010101010101;                                                                                                            2 0 0 0 0 0 0 0 \ 0 0 0 0 0 0 0 0;                                                1 0 0 0 0 0 0 0 0 0 0 0
-                           Instruction 2;                    2;          0;          010010000000000000000000 \ 010101010101010101010101;                                                                                                            4 0 0 0 0 0 0 0 \ 0 0 0 0 0 0 0 0;                                                2 0 0 0 0 0 0 0 0 0 0 0
-                           Instruction 3;                    2;        0.1;          001001000000000000000000 \ 000000000000000000010000;                                                                                                            5 0 0 0 0 0 0 0 \ 0 0 0 0 0 0 0 0;                                                3 0 0 0 0 0 0 0 0 0 0 0
-
-DYNAMIC_PROCESS_VARIABLES
-                                    Name;                Start;                  End;              Default;     Logarithmic;   Send
-
-STATIC_PROCESS_VARIABLES
-                                    Name;                Value
-
-SEQUENCING_PARAMETERS
-     Steps;  Persistent;    Delay
-         1;           0;      0.0
+{
+  "sequencing_parameters": {
+    "steps": 1, 
+    "persistent": false, 
+    "delay": 0.0
+  }, 
+  "dynamic_variables": [], 
+  "static_variables": [], 
+  "instructions": [
+    {
+      "name": "Instruction 1", 
+      "duration": "1", 
+      "stepsize": "0.2", 
+      "digital_pins": {
+        "1": "010101010101010101010101", 
+        "0": "100100000000000000000000"
+      }, 
+      "analog_functions": {
+        "Dev1": [
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ], 
+        "Dev0": [
+          "2", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }, 
+      "novatech_functions": {
+        "COM0": [
+          "1", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }
+    }, 
+    {
+      "name": "Instruction 2", 
+      "duration": "2", 
+      "stepsize": "0", 
+      "digital_pins": {
+        "1": "010101010101010101010101", 
+        "0": "010010000000000000000000"
+      }, 
+      "analog_functions": {
+        "Dev1": [
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ], 
+        "Dev0": [
+          "4", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }, 
+      "novatech_functions": {
+        "COM0": [
+          "2", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }
+    }, 
+    {
+      "name": "Instruction 3", 
+      "duration": "2", 
+      "stepsize": "0.1", 
+      "digital_pins": {
+        "1": "000000000000000000010000", 
+        "0": "001001000000000000000000"
+      }, 
+      "analog_functions": {
+        "Dev1": [
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ], 
+        "Dev0": [
+          "5", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }, 
+      "novatech_functions": {
+        "COM0": [
+          "3", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }
+    }
+  ]
+}

@@ -1,8 +1,5 @@
-QPushButton {
-	background-color: rgb(120, 140, 255);
-	border-style: solid;
-	border-color: rgb(176, 176, 176);
-	border-width: 1px;
-}
-QPushButton:hover {background-color: rgb(210, 230, 255)}
-QPushButton:pressed {background-color: rgb(170, 190, 255)}
+QTreeWidget::item {color: #000000;}
+QTreeWidget::indicator:checked {background-color: #55FF00;}
+QTreeWidget::indicator:checked:hover {background-color: #BBFF00;}
+QTreeWidget::indicator:unchecked {background-color: #DDDDDD;}
+QTreeWidget::indicator:unchecked:hover {background-color: #AAAAAA;}

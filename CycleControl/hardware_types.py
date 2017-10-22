@@ -1,3 +1,6 @@
+from collections import OrderedDict
+import json
+
 class HardwareSetup(object):
     def __init__(self):
         self.pulseblasters = []
@@ -8,90 +11,85 @@ class HardwareSetup(object):
         self.pulseblasters = []
         self.ni_boards = []
         self.novatechs = []
-        parsers = {
-            "PULSEBLASTER": self.parse_pb,
-            "NI BOARD": self.parse_ni,
-            "NOVATECH": self.parse_nova
-        }
-        with open(fp, 'r') as f:
-            for line in f:
-                line = [x.strip() for x in line.split(';')]
-                if line[0] in parsers:
-                    f.next()
-                    parser = parsers.get(line[0])
-                    parser(f, line[1])
-                    continue
 
-    def parse_pb(self, f, num):
-        pb = PulseBlasterBoard(str(num))
-        self.pulseblasters.append(pb)
-        for line in f:
-            if not line.strip():
-                return
-            line = [x.strip() for x in line.split(';')]
-            channel = pb.channels[int(line[0])]
-            channel.enabled = bool(int(line[1]))
+        with open(fp, 'rb') as f:
+            context = json.load(f)
 
-    def parse_ni(self, f, id):
-        ni = NIBoard(str(id))
-        self.ni_boards.append(ni)
-        for line in f:
-            if not line.strip():
-                return
-            line = [x.strip() for x in line.split(';')]
-            channel = ni.channels[int(line[0])]
-            channel.enabled = bool(int(line[1]))
-            channel.label = line[2]
-            channel.min = float(line[3])
-            channel.max = float(line[4])
-            channel.scaling = str(line[5])
+        for board in context.get('pulseblasters'):
+            pb = PulseBlasterBoard(board.get('id'))
+            pb.analog_pin = board.get('analog_pin')
+            pb.novatech_pin = board.get('novatech_pin')
+            for i, channel in enumerate(board.get('channels')):
+                pb[i].enabled = channel.get('enabled')
+            self.pulseblasters.append(pb)
 
-    def parse_nova(self, f, port):
-        nova = NovatechBoard(str(port))
-        self.novatechs.append(nova)
-        for line in f:
-            if not line.strip():
-                return
-            line = [x.strip() for x in line.split(';')]
-            channel = nova.channels[int(line[0])]
-            channel.enabled = bool(int(line[1]))
+        for board in context.get('ni_boards'):
+            ni_board = NIBoard(board.get('id'))
+            for i, channel in enumerate(board.get('channels')):
+                ni_board[i].enabled = channel.get('enabled')
+                ni_board[i].label = channel.get('label')
+                ni_board[i].min = channel.get('min')
+                ni_board[i].max = channel.get('max')
+                ni_board[i].scaling = channel.get('scaling')
+            self.ni_boards.append(ni_board)
+
+        for board in context.get('novatechs'):
+            novatech = NovatechBoard(board.get('id'))
+            for i, channel in enumerate(board.get('channels')):
+                novatech[i].enabled = channel.get('enabled')
+            self.novatechs.append(novatech)
+
+    def serialize_board(self, board, board_params = (), channel_params = ()):
+        serialized_board = OrderedDict([(attr, getattr(board, attr)) for attr in board_params])
+        channels = []
+        for channel in board:
+            channels.append(OrderedDict([(attr, getattr(channel, attr)) for attr in channel_params]))
+        serialized_board.update([('channels', channels)])
+        return serialized_board
 
     def save_hardware_file(self, fp):
+        pulseblasters = []
+        for board in self.pulseblasters:
+            serialized_board = self.serialize_board(
+                board,
+                board_params = ['id', 'analog_pin', 'novatech_pin'],
+                channel_params = ['enabled']
+            )
+            pulseblasters.append(serialized_board)
+
+        ni_boards = []
+        for board in self.ni_boards:
+            serialized_board = self.serialize_board(
+                board,
+                board_params = ['id'],
+                channel_params = ['enabled', 'label', 'min', 'max', 'scaling']
+            )
+            ni_boards.append(serialized_board)
+
+        novatechs = []
+        for board in self.novatechs:
+            serialized_board = self.serialize_board(
+                board,
+                board_params = ['id'],
+                channel_params = ['enabled']
+            )
+            novatechs.append(serialized_board)
+
         with open(fp, 'w+') as f:
-            pb_format = ' {:>8}; {:>8}\n'
-            ni_format = ' {:>8}; {:>8}; {:>30}; {:>8}; {:>8}; {:>20}\n'
-            nova_format = ' {:>8}; {:>8}\n'
-
-            for board in self.pulseblasters:
-                f.write('\nPULSEBLASTER; {0}\n'.format(board.board_identifier))
-                f.write(pb_format.format('Channel', 'Enabled'))
-                for i, channel in enumerate(board.channels):
-                    f.write(pb_format.format(i, int(channel.enabled)))
-
-            for board in self.ni_boards:
-                f.write('\nNI BOARD; {0}\n'.format(board.board_identifier))
-                f.write(ni_format.format('Channel', 'Enabled', 'Label', 'Min', 'Max', 'Scaling Params'))
-                for i, channel in enumerate(board.channels):
-                    f.write(ni_format.format(
-                        i,
-                        int(channel.enabled),
-                        channel.label,
-                        channel.min,
-                        channel.max,
-                        channel.scaling
-                    ))
-
-            for board in self.novatechs:
-                f.write('\nNOVATECH; {0}\n'.format(board.board_identifier))
-                f.write(nova_format.format('Channel', 'Enabled'))
-                for i, channel in enumerate(board.channels):
-                    f.write(nova_format.format(i, int(channel.enabled)))
+            json.dump(OrderedDict([
+                ('pulseblasters', pulseblasters),
+                ('ni_boards', ni_boards),
+                ('novatechs', novatechs),
+            ]), f, indent=2)
 
 
 class Board (object):
     def __init__(self, id):
-        self.board_identifier = id
+        self.id = id
         self.channels = []
+
+    def __getitem__(self, idx):
+        return self.channels[idx]
 
 
 class Channel(object):
@@ -110,7 +108,6 @@ class PulseBlasterBoard(Board):
 class PulseBlasterChannel(Channel):
     def __init__(self):
         super(PulseBlasterChannel, self).__init__()
-        self.enabled = False
 
 
 class NIBoard(Board):

@@ -11,9 +11,15 @@ class HardwareTree(QTreeWidget):
         QTreeWidget.__init__(self)
         self.gui = gui
         self.itemChanged.connect(self.cell_changed_handler)
+        self.setStyleSheet(load_stylesheet('hardware_tree_cb.qss'))
+        self.setAlternatingRowColors(True)
 
     def redraw(self):
         pass
+
+    def resize_columns(self, width = 100):
+        for i in range(self.columnCount()):
+            self.header().resizeSection(i, width)
 
     def update_hardware(self, item, col):
         pass
@@ -30,12 +36,12 @@ class DigitalTree(HardwareTree):
         item.setData(1, QtCore.Qt.DisplayRole, 'Analog Pin')
         item.setData(2, QtCore.Qt.DisplayRole, 'Novatech Pin')
         self.setHeaderItem(item)
+        self.resize_columns()
 
     def update_hardware(self, item, col):
         if self.gui.updating.lock:
             return
         with self.gui.updating:
-            print 'UPDATING'
             if item.parent():
                 board_index = self.indexOfTopLevelItem(item.parent())
                 channel = self.gui.hardware.pulseblasters[board_index].channels[int(item.text(0))]
@@ -45,14 +51,14 @@ class DigitalTree(HardwareTree):
                 board_index = self.indexOfTopLevelItem(item)
                 board = self.gui.hardware.pulseblasters[board_index]
                 if col == 0:
-                    board.board_identifier = item.text(col)
+                    board.id = item.text(col)
 
     def redraw(self):
         with self.gui.updating:
             for i in range(self.topLevelItemCount()):
                 self.takeTopLevelItem(0)
             for board in self.gui.hardware.pulseblasters:
-                board_root = QTreeWidgetItem(self, [board.board_identifier])
+                board_root = QTreeWidgetItem(self, [board.id])
                 board_root.setData(1, QtCore.Qt.DisplayRole, board.analog_pin)
                 board_root.setData(2, QtCore.Qt.DisplayRole, board.novatech_pin)
                 board_root.setFlags(board_root.flags() | QtCore.Qt.ItemIsEditable)
@@ -71,6 +77,7 @@ class AnalogTree(HardwareTree):
         item.setData(3, QtCore.Qt.DisplayRole, 'Max')
         item.setData(4, QtCore.Qt.DisplayRole, 'Scaling')
         self.setHeaderItem(item)
+        self.resize_columns()
 
         self.itemDoubleClicked.connect(self.checkEdit)
         self.setEditTriggers(self.NoEditTriggers)
@@ -96,14 +103,14 @@ class AnalogTree(HardwareTree):
                 board_index = self.indexOfTopLevelItem(item)
                 board = self.gui.hardware.ni_boards[board_index]
                 if col == 0:
-                    board.board_identifier = item.text(col)
+                    board.id = item.text(col)
 
     def redraw(self):
         with self.gui.updating:
             for i in range(self.topLevelItemCount()):
                 self.takeTopLevelItem(0)
             for board in self.gui.hardware.ni_boards:
-                board_root = QTreeWidgetItem(self, [board.board_identifier])
+                board_root = QTreeWidgetItem(self, [board.id])
                 board_root.setFlags(board_root.flags() | QtCore.Qt.ItemIsEditable)
                 for i, channel in enumerate(board.channels):
                     item = QTreeWidgetItem(board_root, [str(i)])
@@ -126,6 +133,7 @@ class NovatechTree(HardwareTree):
         item = QTreeWidgetItem()
         item.setData(0, QtCore.Qt.DisplayRole, 'Channel')
         self.setHeaderItem(item)
+        self.resize_columns()
 
     def update_hardware(self, item, col):
         if self.gui.updating.lock:
@@ -140,14 +148,14 @@ class NovatechTree(HardwareTree):
                 board_index = self.indexOfTopLevelItem(item)
                 board = self.gui.hardware.novatechs[board_index]
                 if col == 0:
-                    board.board_identifier = item.text(col)
+                    board.id = item.text(col)
 
     def redraw(self):
         with self.gui.updating:
             for i in range(self.topLevelItemCount()):
                 self.takeTopLevelItem(0)
             for board in self.gui.hardware.novatechs:
-                board_root = QTreeWidgetItem(self, [board.board_identifier])
+                board_root = QTreeWidgetItem(self, [board.id])
                 board_root.setFlags(board_root.flags() | QtCore.Qt.ItemIsEditable)
                 for i, channel in enumerate(board.channels):
                     item = QTreeWidgetItem(board_root, [str(i)])

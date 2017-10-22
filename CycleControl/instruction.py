@@ -2,6 +2,8 @@ from cycle import *
 from threading import Thread
 from hardware_types import HardwareSetup
 from helpers import *
+from collections import OrderedDict
+import json
 
 import time
 
@@ -66,69 +68,49 @@ class ProcedureParameters(object):
                     return False
         return True
 
-
     def save_to_file(self, fp, gui):
-        dynamic_var_format = '{:>40}; {:>20}; {:>20}; {:>20}; {:>15}; {:>6}\n'
-        static_var_format = '{:>40}; {:>20}\n'
-        seq_param_format = '{:>10}; {:>11}; {:>8}\n'
+        instructions = []
+        for inst in self.instructions:
+            instructions.append( OrderedDict([(attr, getattr(inst, attr)) for attr in [
+                'name',
+                'duration',
+                'stepsize',
+                'digital_pins',
+                'analog_functions',
+                'novatech_functions'
+            ]] ))
+
+        dynamic_variables = []
+        for var in self.dynamic_variables:
+            dynamic_variables.append( OrderedDict([(attr, getattr(var, attr)) for attr in [
+                'name',
+                'start',
+                'end',
+                'default',
+                'logarithmic',
+                'send'
+            ]] ))
+
+        static_variables = []
+        for var in self.static_variables:
+            static_variables.append( OrderedDict([(attr, getattr(var, attr)) for attr in [
+                'name',
+                'default',
+            ]] ))
+
+        sequencing_parameters = OrderedDict([
+            ('steps', self.steps),
+            ('persistent', self.persistent),
+            ('delay', self.delay),
+       ])
+
         with open(fp, 'w+') as f:
-            pulseblasters = [board.board_identifier for board in gui.hardware.pulseblasters]
-            ni_boards = [board.board_identifier for board in gui.hardware.ni_boards]
-            novatechs = [board.board_identifier for board in gui.hardware.novatechs]
-            inst_format = '{{:>40}}; {{:>20}}; {{:>10}}; {{:>{digital_length}}}; {{:>{analog_length}}}; {{:>{novatech_length}}}\n'.format(**{
-                'digital_length': str(30*len(pulseblasters)),
-                'analog_length': str(70*len(ni_boards)),
-                'novatech_length': str(70*len(novatechs))
-            })
-
-            f.write('INSTRUCTIONS\n')
-            f.write(inst_format.format(
-                'Name',
-                'Duration',
-                'Stepsize',
-                'Digital Outputs'+''.join([', '+x for x in pulseblasters]),
-                'Analog Outputs'+''.join([', '+x for x in ni_boards]),
-                'Novatech Outputs'+''.join([', '+x for x in novatechs]),
-            ))
-            analog_format = '{} {} {} {} {} {} {} {}'
-            novatech_format = '{} {} {} {} {} {} {} {} {} {} {} {}'
-            for i in self.instructions:
-                f.write(inst_format.format(
-                    i.name,
-                    i.duration,
-                    i.stepsize,
-                    ''.join([i.digital_pins.get(board) + ' \\ ' for board in pulseblasters])[:-3],
-                    ''.join([analog_format.format(*i.analog_functions.get(board)) + ' \\ ' for board in ni_boards])[:-3],
-                    ''.join([novatech_format.format(*i.novatech_functions.get(board)) + ' \\ ' for board in novatechs])[:-3]
-                ))
-
-            f.write('\nDYNAMIC_PROCESS_VARIABLES\n')
-            f.write(dynamic_var_format.format(
-                'Name',
-                'Start',
-                'End',
-                'Default',
-                'Logarithmic',
-                'Send'
-            ))
-            for i in self.dynamic_variables:
-                f.write(dynamic_var_format.format(
-                    i.name,
-                    i.start,
-                    i.end,
-                    i.default,
-                    int(i.logarithmic),
-                    int(i.send)
-                ))
-
-            f.write('\nSTATIC_PROCESS_VARIABLES\n')
-            f.write(static_var_format.format('Name', 'Value'))
-            for i in self.static_variables:
-                f.write(static_var_format.format(i.name, i.default))
-
-            f.write('\nSEQUENCING_PARAMETERS\n')
-            f.write(seq_param_format.format('Steps', 'Persistent', 'Delay'))
-            f.write(seq_param_format.format(self.steps, int(self.persistent), self.delay))
+            json.dump(OrderedDict([
+                ('sequencing_parameters', sequencing_parameters),
+                ('dynamic_variables', dynamic_variables),
+                ('static_variables', static_variables),
+                ('instructions', instructions),
+            ]), f, indent = 2)
 
     def load_from_file(self, fp, gui):
         self.instructions = []
@@ -137,85 +119,40 @@ class ProcedureParameters(object):
         self.steps = 1
         self.persistent = False
         self.delay = 0.0
-        parsers = {
-            "INSTRUCTIONS": self.parse_inst_line,
-            "DYNAMIC_PROCESS_VARIABLES": self.parse_dyn_var_line,
-            "STATIC_PROCESS_VARIABLES": self.parse_stat_var_line,
-            "SEQUENCING_PARAMETERS": self.parse_seq_param_line,
-        }
+
         with open(fp, 'rb') as f:
-            for line in f:
-                line = line.strip()
-                if line in parsers:
-                    parser = parsers.get(line)
-                    parser(f, f.next(), gui)
-                    continue
+            context = json.load(f)
 
-    def parse_inst_line(self, f, header, gui):
-        header = [x.strip() for x in header.split(';')]
+        for inst in context.get('instructions'):
+            i = Instruction(gui.hardware)
+            i.set_name(inst.get('name'))
+            i.set_duration(inst.get('duration'))
+            i.set_stepsize(inst.get('stepsize'))
+            i.digital_pins.update(inst.get('digital_pins'))
+            i.analog_functions.update(inst.get('analog_functions'))
+            i.novatech_functions.update(inst.get('novatech_functions'))
+            self.instructions.append(i)
 
-        pulseblasters = [x.strip() for x in header[3].split(',')][1:]
-        ni_boards = [x.strip() for x in header[4].split(',')][1:]
-        novatechs = [x.strip() for x in header[5].split(',')][1:]
-
-        for line in f:
-            if not line.strip():
-                return
-            line = [x.strip() for x in line.split(';')]
-            inst = Instruction(gui.hardware)
-            self.instructions.append(inst)
-
-            inst.set_name(line[0])
-            inst.set_duration(line[1])
-            inst.set_stepsize(line[2])
-
-            for i, board_inst in enumerate([x.strip() for x in line[3].split('\\')]):
-                if pulseblasters and pulseblasters[i] in inst.digital_pins:
-                    inst.digital_pins.update([(pulseblasters[i], board_inst)])
-
-            for i, board_inst in enumerate([x.strip() for x in line[4].split('\\')]):
-                if ni_boards and ni_boards[i] in inst.analog_functions:
-                    inst.analog_functions.update([(ni_boards[i], board_inst.split(' '))])
-
-            for i, board_inst in enumerate([x.strip() for x in line[5].split('\\')]):
-                if novatechs and novatechs[i] in inst.novatech_functions:
-                    inst.novatech_functions.update([(novatechs[i], board_inst.split(' '))])
-
-    def parse_dyn_var_line(self, f, header, gui):
-        for line in f:
-            if not line.strip():
-                return
-            line = [x.strip() for x in line.split(';')]
+        for var in context.get('dynamic_variables'):
             dyn_var = DynamicProcessVariable()
+            dyn_var.set_name(var.get('name'))
+            dyn_var.set_start(var.get('start'))
+            dyn_var.set_end(var.get('end'))
+            dyn_var.set_default(var.get('default'))
+            dyn_var.set_log(var.get('logarithmic'))
+            dyn_var.set_send(var.get('send'))
             self.dynamic_variables.append(dyn_var)
 
-            dyn_var.set_name(line[0])
-            dyn_var.set_start(line[1])
-            dyn_var.set_end(line[2])
-            dyn_var.set_default(line[3])
-            dyn_var.set_log(int(line[4]))
-            dyn_var.set_send(int(line[5]))
-
-    def parse_stat_var_line(self, f, header, gui):
-        for line in f:
-            if not line.strip():
-                return
-            line = [x.strip() for x in line.split(';')]
+        for var in context.get('static_variables'):
             stat_var = StaticProcessVariable()
+            stat_var.set_name(var.get('name'))
+            stat_var.set_default(var.get('default'))
             self.static_variables.append(stat_var)
 
-            stat_var.set_name(line[0])
-            stat_var.set_default(line[1])
-
-    def parse_seq_param_line(self, f, header, gui):
-        for line in f:
-            if not line.strip():
-                return
-            line = [x.strip() for x in line.split(';')]
-
-            self.steps = int(line[0])
-            self.persistent = bool(int(line[1]))
-            self.delay = float(line[2])
+        params = context.get('sequencing_parameters')
+        self.steps = params.get('steps')
+        self.persistent = params.get('persistent')
+        self.delay = params.get('delay')
 
     def get_static_variables(self):
         return {x.name: float(x.default) for x in self.static_variables}
@@ -253,9 +190,9 @@ class Instruction(object):
         self.duration = 0.0
         self.stepsize = 0.0
 
-        self.digital_pins = {board.board_identifier: '0' * 24 for board in hardware.pulseblasters}
-        self.analog_functions = {board.board_identifier: ['0'] * 8 for board in hardware.ni_boards}
-        self.novatech_functions = {board.board_identifier: ['0'] * 12 for board in hardware.novatechs}
+        self.digital_pins = {board.id: '0' * 24 for board in hardware.pulseblasters}
+        self.analog_functions = {board.id: ['0'] * 8 for board in hardware.ni_boards}
+        self.novatech_functions = {board.id: ['0'] * 12 for board in hardware.novatechs}
 
     def __eq__(self, other):
         attrs = ['name', 'duration', 'stepsize', 'digital_pins', 'analog_functions', 'novatech_functions']
