@@ -1,5 +1,5 @@
-#from spinapi import *
-#from PyDAQmx import *
+# from spinapi import *
+# from PyDAQmx import *
 
 from mock_spinapi import *
 from mock_PyDAQmx import *
@@ -30,6 +30,7 @@ class Programmer(object):
 
         pb_core_clock(100.0)
         self.update_task_handles()
+        self.novatech_tables = {}
 
     def update_task_handles(self):
         self.clear_all_task_handles()
@@ -107,42 +108,37 @@ class Programmer(object):
             DAQmxCfgSampClkTiming(task, "/"+board.id + "/PFI0", 10000.0, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, num_samples)
             DAQmxWriteAnalogF64(task, num_samples, 0, 10.0, DAQmx_Val_GroupByChannel, data, None, None)
 
-
-
     def program_novatech(self):
         for board, vals in self.cycle.novatech_data.iteritems():
-            print 'programming: ', board
-            with serial.Serial(board, baudrate=19200, timeout=20.0) as nova_device:
-                nova_device.write('M 0\n'.encode('utf-8'))  # entering table writing mode
-                init = time.time()
-                out = ''
-                for sample in range(len(vals[0]) - 1):
-                    for channel in range(len(vals)/3):
+            out = self.get_novatech_out(0, 0, vals)
+            for sample in range(len(vals[0]) - 1):
+                out += self.get_novatech_out(sample, sample + 1, vals)
+            out += self.get_novatech_out(sample, sample + 2, vals, state='00')
+            if self.novatech_tables.get(board, None) == out:
+                print 'novatech {0} skipped'.format(board)
+                continue
+            # with serial.Serial(board, baudrate=19200, timeout=20.0) as nova_device:
+            #     nova_device.write('M 0\n'.encode('utf-8'))  # entering table writing mode
+            #     nova_device.write(out.encode('utf-8'))
+            #     nova_device.write('M t\n'.encode('utf-8'))  # finished writing table
+            self.novatech_tables.update([(board, out)])
 
-                        addr = np.base_repr(int(sample), 16).zfill(4)
-                        amp = np.base_repr(int(vals[3 * channel + 0][sample]), 16).zfill(4)
-                        freq = np.base_repr(int(vals[3 * channel + 1][sample] * 1e6 / 0.1), 16).zfill(8)
-                        phase = np.base_repr(int(vals[3 * channel + 2][sample]), 16).zfill(4)
-
-                        out += 't{0:1.1} {1:4.4} {2:8.8},{3:4.4},{4:4.4},{5:2.2}\n'.format(str(channel), addr,  freq, phase, amp, 'FF')
-
-                        #tn 3fff aabbccdd,eeff,gghh,ii
-                        #channel , address, freq, phase, amp, dwell
-
-                        #convert V to dBm: dBm = 10 * log_10 ( V_RMS^2 / (50ohm * 1mW) )
-                print time.time() - init
-                nova_device.write(out.encode('utf-8'))
-                print time.time() - init
-                nova_device.write('M t\n'.encode('utf-8'))  # finished writing table
+    def get_novatech_out(self, sample, addr, vals, state = 'FF'):
+        result = ''
+        addr = np.base_repr(addr, 16).zfill(4)
+        for channel in range(len(vals) / 3):
+            amp = np.base_repr(int(vals[3 * channel + 0][sample]), 16).zfill(4)
+            freq = np.base_repr(int(vals[3 * channel + 1][sample] * 1e6 / 0.1), 16).zfill(8)
+            phase = np.base_repr(int(vals[3 * channel + 2][sample]), 16).zfill(4)
+            result += 't{0:1.1} {1:4.4} {2:8.8},{3:4.4},{4:4.4},{5:2.2}\n'.format(str(channel), addr, freq, phase, amp, state)
+        return result
 
     def start_device_handler(self):
         if self.get_first_task_handle():
             self.start_all_task_handles()
             time.sleep(0.01)
             pb_start()
-            init = time.time()
             DAQmxWaitUntilTaskDone(self.get_first_task_handle(), self.cycle.analog_domain[-1])  # seconds
-            print 'that took ', (time.time() - init)
             self.stop_all_task_handles()
         else:
             pb_start()

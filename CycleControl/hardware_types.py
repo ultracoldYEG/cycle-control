@@ -2,10 +2,10 @@ from collections import OrderedDict
 import json
 
 class HardwareSetup(object):
-    def __init__(self):
-        self.pulseblasters = []
-        self.ni_boards = []
-        self.novatechs = []
+    def __init__(self, **kwargs):
+        self.pulseblasters = kwargs.get('pulseblasters', [])
+        self.ni_boards = kwargs.get('ni_boards', [])
+        self.novatechs = kwargs.get('novatechs', [])
 
     def load_hardware_file(self, fp):
         self.pulseblasters = []

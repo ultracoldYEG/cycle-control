@@ -108,6 +108,25 @@ class Cycle(object):
             self.digital_data.get(board).append(data)
 
     def create_single_waveform(self, inst, boards):
+        functions = self.get_functions(boards)
+        duration = parse_arg(inst.duration, self.variables)
+        stepsize = parse_arg(inst.stepsize, self.variables)
+
+        if all((func == constFunc for board, board_funcs in functions.iteritems() for func, args in board_funcs)):
+            domain = [0.0]
+        else:
+            domain = range(0, int(duration * 10 ** 12),  int(stepsize * 10 ** 12))
+
+        if duration * 10 ** 12 - domain[-1] < stepsize * 10 ** 12 and len(domain) > 2:
+            del domain[-1]
+
+        if id(self.instructions[-1]) == id(inst):
+            domain.append(int(duration * 10 ** 12))
+
+        domain = [float(x) / 10 ** 12 for x in domain]
+        return domain, {board: [func(domain, duration, *args) for func, args in board_funcs] for board, board_funcs in functions.iteritems()}
+
+    def get_functions(self, boards):
         funcs = {}
         for board, func_strings in boards.iteritems():
             board_funcs = []
@@ -121,20 +140,4 @@ class Cycle(object):
                 else:
                     print key, 'is not a valid function key'
                     return
-
-        duration = parse_arg(inst.duration, self.variables)
-        stepsize = parse_arg(inst.stepsize, self.variables)
-
-        if all((func == constFunc for board, board_funcs in funcs.iteritems() for func, args in board_funcs)):
-            domain = [0.0]
-        else:
-            domain = range(0, int(duration * 10 ** 12),  int(stepsize * 10 ** 12))
-
-        if duration * 10 ** 12 - domain[-1] < stepsize and len(domain) > 2:
-            del domain[-1]
-            
-        if id(self.instructions[-1]) == id(inst):
-            domain.append(int(duration * 10 ** 12))
-
-        domain = [float(x) / 10 ** 12 for x in domain]
-        return domain, {board: [func(domain, duration, *args) for func, args in board_funcs] for board, board_funcs in funcs.iteritems()}
+        return funcs

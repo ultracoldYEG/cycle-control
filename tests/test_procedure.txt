@@ -1,0 +1,119 @@
+{
+  "sequencing_parameters": {
+    "steps": 1, 
+    "persistent": false, 
+    "delay": 0.0
+  }, 
+  "dynamic_variables": [], 
+  "static_variables": [], 
+  "instructions": [
+    {
+      "name": "Instruction 1", 
+      "duration": "3", 
+      "stepsize": "1.0", 
+      "digital_pins": {
+        "0": "110000000000000000000000"
+      }, 
+      "analog_functions": {
+        "Dev1": [
+          "ramp(0,1)", 
+          "-0.5", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }, 
+      "novatech_functions": {
+        "COM1": [
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }
+    }, 
+    {
+      "name": "Instruction 2", 
+      "duration": "3", 
+      "stepsize": "0.99", 
+      "digital_pins": {
+        "0": "101000000000000000000000"
+      }, 
+      "analog_functions": {
+        "Dev1": [
+          "ramp(0,1)", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }, 
+      "novatech_functions": {
+        "COM1": [
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }
+    }, 
+    {
+      "name": "Instruction 3", 
+      "duration": "3", 
+      "stepsize": "1.01", 
+      "digital_pins": {
+        "0": "100100000000000000000000"
+      }, 
+      "analog_functions": {
+        "Dev1": [
+          "ramp(0,1)", 
+          "0.5", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }, 
+      "novatech_functions": {
+        "COM1": [
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }
+    }
+  ]
+}

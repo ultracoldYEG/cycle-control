@@ -1,0 +1,165 @@
+{
+  "pulseblasters": [
+    {
+      "id": "0", 
+      "analog_pin": null, 
+      "novatech_pin": null, 
+      "channels": [
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }
+      ]
+    }
+  ], 
+  "ni_boards": [
+    {
+      "id": "Dev1", 
+      "channels": [
+        {
+          "enabled": true, 
+          "label": "Test output1", 
+          "min": -1.0, 
+          "max": 1.0, 
+          "scaling": ""
+        }, 
+        {
+          "enabled": true, 
+          "label": "test output2", 
+          "min": -1.0, 
+          "max": 1.0, 
+          "scaling": ""
+        }, 
+        {
+          "enabled": true, 
+          "label": "test output3", 
+          "min": -1.0, 
+          "max": 1.0, 
+          "scaling": ""
+        }, 
+        {
+          "enabled": true, 
+          "label": "test output4", 
+          "min": -1.0, 
+          "max": 1.0, 
+          "scaling": ""
+        }, 
+        {
+          "enabled": false, 
+          "label": "", 
+          "min": -1.0, 
+          "max": 1.0, 
+          "scaling": ""
+        }, 
+        {
+          "enabled": false, 
+          "label": "", 
+          "min": -1.0, 
+          "max": 1.0, 
+          "scaling": ""
+        }, 
+        {
+          "enabled": false, 
+          "label": "", 
+          "min": -1.0, 
+          "max": 1.0, 
+          "scaling": ""
+        }, 
+        {
+          "enabled": false, 
+          "label": "", 
+          "min": -1.0, 
+          "max": 1.0, 
+          "scaling": ""
+        }
+      ]
+    }
+  ], 
+  "novatechs": [
+    {
+      "id": "COM1", 
+      "channels": [
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }
+      ]
+    }
+  ]
+}
