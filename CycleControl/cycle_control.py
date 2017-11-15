@@ -200,7 +200,7 @@ class Main(QMainWindow, Ui_MainWindow):
         with self.updating:
             num = len(self.proc_params.static_variables)
             stat_var = StaticProcessVariable()
-            stat_var.name = 'static variable '+str(num)
+            stat_var.name = 'static_variable_{0}'.format(num)
             self.proc_params.static_variables.append(stat_var)
             self.insert_stat_var_row(num)
 
@@ -267,7 +267,7 @@ class Main(QMainWindow, Ui_MainWindow):
     def new_dyn_var_handler(self):
         num = len(self.proc_params.dynamic_variables)
         dyn_var = DynamicProcessVariable()
-        dyn_var.name = 'dynamic variable '+str(num)
+        dyn_var.name = 'dynamic_variable_{0}'.format(num)
         self.proc_params.dynamic_variables.append(dyn_var)
         self.insert_dyn_var(num)
 
@@ -297,6 +297,7 @@ class Main(QMainWindow, Ui_MainWindow):
             self.dyn_var_list.setCurrentRow(row)
 
     def update_dynamic_var_name(self, name):
+        name = sterilize_string(name)
         if self.current_dyn_var:
             self.current_dyn_var.set_name(name)
             self.redraw_dyn_var_row(self.dyn_var_list.currentRow())

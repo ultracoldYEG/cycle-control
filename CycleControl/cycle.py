@@ -112,18 +112,20 @@ class Cycle(object):
         duration = parse_arg(inst.duration, self.variables)
         stepsize = parse_arg(inst.stepsize, self.variables)
 
+        stepsize = duration if stepsize == 0 else stepsize
+
         if all((func == constFunc for board, board_funcs in functions.iteritems() for func, args in board_funcs)):
             domain = [0.0]
         else:
-            domain = range(0, int(duration * 10 ** 12),  int(stepsize * 10 ** 12))
+            domain = range(0, int(duration * 1e12),  int(stepsize * 1e12))
 
-        if duration * 10 ** 12 - domain[-1] < stepsize * 10 ** 12 and len(domain) > 2:
+        if duration * 1e12 - domain[-1] < stepsize * 1e12 and len(domain) > 2:
             del domain[-1]
 
         if id(self.instructions[-1]) == id(inst):
             domain.append(int(duration * 10 ** 12))
 
-        domain = [float(x) / 10 ** 12 for x in domain]
+        domain = [float(x) / 1e12 for x in domain]
         return domain, {board: [func(domain, duration, *args) for func, args in board_funcs] for board, board_funcs in functions.iteritems()}
 
     def get_functions(self, boards):

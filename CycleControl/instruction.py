@@ -238,7 +238,7 @@ class StaticProcessVariable(object):
 
     def set_name(self, name):
         try:
-            self.name = str(name)
+            self.name = sterilize_string(name)
         except ValueError:
             pass
 

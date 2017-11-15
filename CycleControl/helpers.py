@@ -30,7 +30,7 @@ def replace_bit(bits, i, repl):
     return bits[:i] + repl + bits[i+1:]
 
 def parse_function(string, variables):
-    result = re.match(FUNCTION_REGEX, string)
+    result = re.match(FUNCTION_REGEX, string.replace(' ', ''))
     if result:
         key = result.group(1)
         args = [parse_arg(x.strip(), variables) for x in result.group(2).split(',')]
@@ -60,3 +60,6 @@ def force_even(data):
     if len(data) % 2 == 1:
         return data[:-1]
     return data
+
+def sterilize_string(string):
+    return re.sub('[^0-9a-zA-Z_]+', '', str(string))
