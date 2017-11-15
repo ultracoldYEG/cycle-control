@@ -224,9 +224,6 @@ class Instruction(object):
         except ValueError:
             self.stepsize = stepsize
 
-    def set_analog_strings(self, string_list):
-        self.analog_func_strings = string_list
-
 class StaticProcessVariable(object):
     def __init__(self):
         self.name = ''

@@ -254,7 +254,8 @@ class Main(QMainWindow, Ui_MainWindow):
         self.stat_var_table.removeRow(row)
 
     def select_dyn_var(self, row):
-        if self.proc_params.dynamic_variables:
+        length = len(self.proc_params.dynamic_variables)
+        if row < length and length > 0:
             self.current_dyn_var = self.proc_params.dynamic_variables[row]
             self.dyn_var_name.setText(self.current_dyn_var.name)
             self.dyn_var_start.setText(str(self.current_dyn_var.start))
@@ -293,11 +294,9 @@ class Main(QMainWindow, Ui_MainWindow):
         if self.proc_params.dynamic_variables:
             row = self.dyn_var_list.currentRow()
             del self.proc_params.dynamic_variables[row]
-            self.redraw_all_dyn_var()
-            self.dyn_var_list.setCurrentRow(row)
+            self.dyn_var_list.takeItem(row)
 
     def update_dynamic_var_name(self, name):
-        name = sterilize_string(name)
         if self.current_dyn_var:
             self.current_dyn_var.set_name(name)
             self.redraw_dyn_var_row(self.dyn_var_list.currentRow())
