@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1572</width>
+    <width>1576</width>
     <height>822</height>
    </rect>
   </property>
@@ -265,7 +265,7 @@ QPushButton:pressed {background-color: rgb(170, 190, 255)}</string>
       <item>
        <widget class="QTabWidget" name="tabWidget_2">
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="tab">
          <attribute name="title">
@@ -345,6 +345,27 @@ QPushButton:pressed {background-color: rgb(170, 190, 255)}</string>
                     <widget class="QPushButton" name="new_procedure_button">
                      <property name="text">
                       <string>New Procedure</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="2">
+                    <widget class="QPushButton" name="new_default_button">
+                     <property name="text">
+                      <string>New Default Setup</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="2">
+                    <widget class="QPushButton" name="load_default_button">
+                     <property name="text">
+                      <string>Load Default Setup</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="2">
+                    <widget class="QPushButton" name="save_default_button">
+                     <property name="text">
+                      <string>Save Default Setup</string>
                      </property>
                     </widget>
                    </item>
@@ -684,6 +705,9 @@ QPushButton:pressed {background-color: rgb(170, 190, 255)}</string>
                     <bool>true</bool>
                    </property>
                   </widget>
+                 </item>
+                 <item>
+                  <widget class="QListView" name="dyn_var_list_view"/>
                  </item>
                  <item>
                   <layout class="QGridLayout" name="gridLayout_4" rowstretch="0,0,0,0,0,0,0,0,0">
@@ -1030,7 +1054,7 @@ QPushButton:pressed {background-color: rgb(170, 190, 255)}</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1572</width>
+     <width>1576</width>
      <height>21</height>
     </rect>
    </property>

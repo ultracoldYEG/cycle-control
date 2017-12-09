@@ -1,5 +1,3 @@
-
-
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -76,9 +74,8 @@ class CyclePlotter(object):
                         self.add_checkable_combo_item(self.gui.novatech_channel_combo, label, board.id, 3*i + j)
 
     def update_step(self, val):
-        if val <= self.gui.proc_params.steps:
-            self.step = val
-            self.update_data()
+        self.step = val
+        self.update_data()
 
     def update_data(self):
         if not len(self.gui.proc_params.instructions):

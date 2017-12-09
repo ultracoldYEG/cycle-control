@@ -5,7 +5,10 @@ from helpers import *
 from collections import OrderedDict
 import json
 
+from PyQt5.QtCore import *
+
 import time
+
 
 class Procedure(object):
     def __init__(self, gui):
@@ -25,12 +28,9 @@ class Procedure(object):
         with self.run_lock:
             self.current_step = 0
             while self.activated:
-                if self.current_step < self.parameters.steps:
-                    self.current_variables = self.parameters.get_cycle_variables(self.current_step)
-                elif self.parameters.persistent:
-                    self.current_variables = self.parameters.get_default_variables()
-                else:
+                if self.current_step >= self.parameters.steps and not self.parameters.persistent:
                     break
+                self.current_variables = self.parameters.get_cycle_variables(self.current_step)
                 cycle = Cycle(self.parameters.instructions, self.current_variables)
                 self.run_cycle(cycle)
                 time.sleep(self.parameters.delay)
@@ -47,13 +47,13 @@ class Procedure(object):
 
 
 class ProcedureParameters(object):
-    def __init__(self):
-        self.instructions = []
-        self.static_variables = []
-        self.dynamic_variables = []
-        self.steps = 1
-        self.persistent = False
-        self.delay = 0.0
+    def __init__(self, **kwargs):
+        self.instructions = kwargs.get('instructions', [])
+        self.static_variables = kwargs.get('static_variables', [])
+        self.dynamic_variables = kwargs.get('dynamic_variables', [])
+        self.steps = kwargs.get('steps', 1)
+        self.persistent = kwargs.get('persistent', False)
+        self.delay = kwargs.get('delay', 0.0)
 
     def __eq__(self, other):
         if any(getattr(self, attr, None) != getattr(other, attr, None) for attr in ['steps', 'persistent', 'delay']):
@@ -158,14 +158,15 @@ class ProcedureParameters(object):
         return {x.name: float(x.default) for x in self.static_variables}
 
     def get_dynamic_variables(self, step):
-        return {x.name: self.get_dynamic_variable_value(step, x) for x in self.dynamic_variables if x.send}
+        return {x.name: (self.get_dynamic_variable_value(step, x) if x.send else x.default) for x in self.dynamic_variables}
 
     def get_dynamic_default_variables(self):
         return {x.name: float(x.default) for x in self.dynamic_variables}
 
     def get_cycle_variables(self, step):
         variables = self.get_static_variables()
-        variables.update(self.get_dynamic_variables(step))
+        dynamic_variables = self.get_dynamic_variables(step) if step < self.steps else self.get_dynamic_default_variables()
+        variables.update(dynamic_variables)
         return variables
 
     def get_default_variables(self):
@@ -183,6 +184,28 @@ class ProcedureParameters(object):
     def get_total_time(self):
         vars = self.get_default_variables()
         return sum([parse_arg(x.duration, vars) for x in self.instructions])
+
+
+class DynamicVariables(QAbstractTableModel):
+    def __init__(self , parent = None, **kwargs):
+        QAbstractItemModel.__init__(self, parent)
+        var = DynamicProcessVariable()
+        var.name='TEST'
+        self.vars = kwargs.get('dynamic_variables', [var])
+
+    def rowCount(self, parent = None, *args, **kwargs):
+        return len(self.vars)
+
+    def columnCount(self, parent=None, *args, **kwargs):
+        return 1
+
+    def data(self, index, role = None):
+        if role == Qt.DisplayRole:
+            return self.vars[index.row()].name
+
+    def index(self, p_int, p_int_1, parent=None, *args, **kwargs):
+        return QModelIndex()
+
 
 class Instruction(object):
     def __init__(self, hardware = HardwareSetup()):
@@ -224,6 +247,35 @@ class Instruction(object):
         except ValueError:
             self.stepsize = stepsize
 
+
+class DefaultSetup(Instruction):
+    def __init__(self, hardware = HardwareSetup()):
+        self.digital_pins = {board.id: '0' * 24 for board in hardware.pulseblasters}
+        self.analog_functions = {board.id: ['0'] * 8 for board in hardware.ni_boards}
+        self.novatech_functions = {board.id: ['0'] * 12 for board in hardware.novatechs}
+
+    @property
+    def name(self):
+        return 'Default'
+
+    @property
+    def duration(self):
+        return 0
+
+    @property
+    def stepsize(self):
+        return 0
+
+    def set_name(self, name):
+        pass
+
+    def set_duration(self, duration):
+        pass
+
+    def set_stepsize(self, stepsize):
+        pass
+
+
 class StaticProcessVariable(object):
     def __init__(self):
         self.name = ''
@@ -245,6 +297,7 @@ class StaticProcessVariable(object):
             self.default = default
         except ValueError:
             pass
+
 
 class DynamicProcessVariable(StaticProcessVariable):
     def __init__(self):
@@ -291,7 +344,7 @@ class DynamicProcessVariable(StaticProcessVariable):
             steps -= 1
         if self.logarithmic:
             return pow(end / start, 1.0 / float(steps))
-        return (end - start) / float(steps)\
+        return (end - start) / float(steps)
 
 
 class cycle_thread(Thread):
@@ -304,6 +357,7 @@ class cycle_thread(Thread):
         self.programmer.program_device_handler(self.cycle)
         self.programmer.start_device_handler()
         print('Cycle complete. Waiting for next start command..')
+
 
 class RunningLock(object):
     def __init__(self):

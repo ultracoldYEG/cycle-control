@@ -9,11 +9,21 @@ from cycle_plotter import *
 
 from widgets import *
 
-from PyQt5.QtWidgets import QComboBox
-
 ROOT_PATH = os.getcwd()
 
 Ui_MainWindow, QMainWindow = loadUiType(os.path.join(ROOT_PATH, 'CycleControl', 'cycle_control.ui'))
+
+class Controller(object):
+    def __init__(self):
+        self.hardware = HardwareSetup()
+        self.default_setup = DefaultSetup(self.hardware)
+        self.programmer = Programmer(self)
+        self.procedure = Procedure(self)
+        self.proc_params = ProcedureParameters()
+
+    @property
+    def instructions(self):
+        return self.proc_params.instructions + [self.default_setup]
 
 
 class Main(QMainWindow, Ui_MainWindow):
@@ -29,9 +39,13 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.procedure = Procedure(self)
 
+        self.default_setup = DefaultSetup(self.hardware)
+
         self.proc_params = ProcedureParameters()
 
         self.clipboard = None
+
+        self.dyn_var_list_view.setModel(DynamicVariables())
 
         # ------ Instruction GUI ---------
         self.digital_table = staging_tables.DigitalTable(self)
@@ -360,8 +374,9 @@ class Main(QMainWindow, Ui_MainWindow):
     def update_prog(self, val):
         self.cycle_progress.setValue(val)
 
-    def update_cycle_label(self, text):
-        self.cycle_label.setText(text)
+    def update_cycle_label(self, num, total):
+        self.cycle_label.setText('Cycle {}/{}'.format(num, total))
+        self.cycle_plot_number.setValue(num)
 
     def update_file_num(self, val):
         self.file_number.setText(str(val))
@@ -470,6 +485,7 @@ class Main(QMainWindow, Ui_MainWindow):
         fp = QFileDialog.getOpenFileName(self, 'Open...', os.path.join(ROOT_PATH, 'hardware_presets'), "Text files (*.txt)")[0]
         if fp:
             self.hardware.load_hardware_file(fp)
+            self.default_setup = DefaultSetup(self.hardware)
             self.redraw_hardware()
             self.plotter.update_channels()
             self.programmer.update_task_handles()
@@ -530,7 +546,7 @@ class procedure_thread(Thread):
 
 class gui_thread(QtCore.QThread):
     prog_update = QtCore.pyqtSignal(object)
-    text_update = QtCore.pyqtSignal(object)
+    text_update = QtCore.pyqtSignal(object, object)
     dyn_var_update = QtCore.pyqtSignal(object)
     file_num_update = QtCore.pyqtSignal(object)
 
@@ -541,7 +557,7 @@ class gui_thread(QtCore.QThread):
     def run(self):
         total = self.procedure.parameters.get_total_time()
         init = time.time()
-        self.text_update.emit('Cycle {}/{}'.format(self.procedure.current_step + 1, self.procedure.parameters.steps))
+        self.text_update.emit(self.procedure.current_step + 1, self.procedure.parameters.steps)
         self.dyn_var_update.emit(self.procedure.current_variables)
         self.file_num_update.emit(self.procedure.cycle_number)
         while (time.time() - init) < total:

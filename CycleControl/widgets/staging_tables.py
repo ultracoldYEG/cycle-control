@@ -88,6 +88,7 @@ class HardwareTable(QTableWidget):
             self.update_inst(row, col)
             self.gui.redraw_inst_row(row)
 
+
 class AnalogTable(HardwareTable):
     def __init__(self, gui):
         super(AnalogTable, self).__init__(gui)
@@ -186,6 +187,7 @@ class AnalogTable(HardwareTable):
             self.setItem(row, col, item)
             self.setRowHeight(row, 25)
 
+
 class NovatechTable(HardwareTable):
     def __init__(self, gui):
         super(NovatechTable, self).__init__(gui)
@@ -258,6 +260,7 @@ class NovatechTable(HardwareTable):
             item.setBackground(self.colors[col])
             self.setItem(row, col, item)
             self.setRowHeight(row, 25)
+
 
 class DigitalTable(HardwareTable):
     def __init__(self, gui):
@@ -342,6 +345,7 @@ class DigitalTable(HardwareTable):
                 widget.cb.setCheckState(bool_to_checkstate(state))
                 self.update_digital(row, col, state)
 
+
 class TableCheckBox(QWidget):
     def __init__(self, table, row, col, state):
         QWidget.__init__(self)
@@ -362,6 +366,7 @@ class TableCheckBox(QWidget):
 
     def update_instruction(self):
         self.table.update_digital(self.row, self.col, self.cb.isChecked())
+
 
 class SetToWindow(QDialog):
     def __init__(self):
@@ -389,6 +394,7 @@ class SetToWindow(QDialog):
 
     def cancel(self):
         self.done(0)
+
 
 class WarningWindow(QDialog):
     def __init__(self, msg = 'An error occured.'):
