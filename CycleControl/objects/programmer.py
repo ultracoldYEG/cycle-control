@@ -1,12 +1,13 @@
 # from spinapi import *
 # from PyDAQmx import *
 
-from mock_spinapi import *
-from mock_PyDAQmx import *
+from CycleControl.mock_spinapi import *
+from CycleControl.mock_PyDAQmx import *
+
 import numpy as np
 import serial
 import time
-from helpers import *
+from CycleControl.helpers import *
 
 class Programmer(object):
     def __init__(self, gui):

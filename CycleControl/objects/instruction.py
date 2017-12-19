@@ -1,339 +1,172 @@
-from cycle import *
-from threading import Thread
-from hardware_types import HardwareSetup
-from helpers import *
-from collections import OrderedDict
-import json
-
-from PyQt5.QtCore import *
-
-import time
-
-
-class Procedure(object):
-    def __init__(self, gui):
-        self.parameters = ProcedureParameters()
-        self.programmer = gui.programmer
-        self.gui = gui
-        self.current_step = 0
-        self.activated = False
-        self.run_lock = RunningLock()
-        self.cycle_number = 0
-        self.current_variables = {}
-
-    def start_sequence(self):
-        if len(self.parameters.instructions) < 1:
-            print('Put in more instructions')
-            return
-        with self.run_lock:
-            self.current_step = 0
-            while self.activated:
-                if self.current_step >= self.parameters.steps and not self.parameters.persistent:
-                    break
-                self.current_variables = self.parameters.get_cycle_variables(self.current_step)
-                cycle = Cycle(self.parameters.instructions, self.current_variables)
-                self.run_cycle(cycle)
-                time.sleep(self.parameters.delay)
-                self.current_step += 1
-                self.cycle_number += 1
-
-    def run_cycle(self, cycle):
-        thread = cycle_thread(self.programmer, cycle)
-        self.gui.worker.procedure = self
-        self.gui.worker.start()
-        thread.start()
-        thread.join()
-        self.gui.worker.wait()
-
-
-class ProcedureParameters(object):
-    def __init__(self, **kwargs):
-        self.instructions = kwargs.get('instructions', [])
-        self.static_variables = kwargs.get('static_variables', [])
-        self.dynamic_variables = kwargs.get('dynamic_variables', [])
-        self.steps = kwargs.get('steps', 1)
-        self.persistent = kwargs.get('persistent', False)
-        self.delay = kwargs.get('delay', 0.0)
-
-    def __eq__(self, other):
-        if any(getattr(self, attr, None) != getattr(other, attr, None) for attr in ['steps', 'persistent', 'delay']):
-            return False
-        for attr in ['instructions', 'static_variables', 'dynamic_variables']:
-            l1 = getattr(self, attr, None)
-            l2 = getattr(other, attr, None)
-            if len(l1) != len(l2):
-                return False
-            for i in range(len(l1)):
-                if not l1[i] == l2[i]:
-                    return False
-        return True
-
-    def save_to_file(self, fp, gui):
-        instructions = []
-        for inst in self.instructions:
-            instructions.append( OrderedDict([(attr, getattr(inst, attr)) for attr in [
-                'name',
-                'duration',
-                'stepsize',
-                'digital_pins',
-                'analog_functions',
-                'novatech_functions'
-            ]] ))
-
-        dynamic_variables = []
-        for var in self.dynamic_variables:
-            dynamic_variables.append( OrderedDict([(attr, getattr(var, attr)) for attr in [
-                'name',
-                'start',
-                'end',
-                'default',
-                'logarithmic',
-                'send'
-            ]] ))
-
-        static_variables = []
-        for var in self.static_variables:
-            static_variables.append( OrderedDict([(attr, getattr(var, attr)) for attr in [
-                'name',
-                'default',
-            ]] ))
-
-        sequencing_parameters = OrderedDict([
-            ('steps', self.steps),
-            ('persistent', self.persistent),
-            ('delay', self.delay),
-       ])
-
-        with open(fp, 'w+') as f:
-            json.dump(OrderedDict([
-                ('sequencing_parameters', sequencing_parameters),
-                ('dynamic_variables', dynamic_variables),
-                ('static_variables', static_variables),
-                ('instructions', instructions),
-            ]), f, indent = 2)
-
-    def load_from_file(self, fp, gui):
-        self.instructions = []
-        self.static_variables = []
-        self.dynamic_variables = []
-        self.steps = 1
-        self.persistent = False
-        self.delay = 0.0
-
-        with open(fp, 'rb') as f:
-            context = json.load(f)
-
-        for inst in context.get('instructions'):
-            i = Instruction(gui.hardware)
-            i.set_name(inst.get('name'))
-            i.set_duration(inst.get('duration'))
-            i.set_stepsize(inst.get('stepsize'))
-            i.digital_pins.update(inst.get('digital_pins'))
-            i.analog_functions.update(inst.get('analog_functions'))
-            i.novatech_functions.update(inst.get('novatech_functions'))
-            self.instructions.append(i)
-
-        for var in context.get('dynamic_variables'):
-            dyn_var = DynamicProcessVariable()
-            dyn_var.set_name(var.get('name'))
-            dyn_var.set_start(var.get('start'))
-            dyn_var.set_end(var.get('end'))
-            dyn_var.set_default(var.get('default'))
-            dyn_var.set_log(var.get('logarithmic'))
-            dyn_var.set_send(var.get('send'))
-            self.dynamic_variables.append(dyn_var)
-
-        for var in context.get('static_variables'):
-            stat_var = StaticProcessVariable()
-            stat_var.set_name(var.get('name'))
-            stat_var.set_default(var.get('default'))
-            self.static_variables.append(stat_var)
-
-        params = context.get('sequencing_parameters')
-        self.steps = params.get('steps')
-        self.persistent = params.get('persistent')
-        self.delay = params.get('delay')
-
-    def get_static_variables(self):
-        return {x.name: float(x.default) for x in self.static_variables}
-
-    def get_dynamic_variables(self, step):
-        return {x.name: (self.get_dynamic_variable_value(step, x) if x.send else x.default) for x in self.dynamic_variables}
-
-    def get_dynamic_default_variables(self):
-        return {x.name: float(x.default) for x in self.dynamic_variables}
-
-    def get_cycle_variables(self, step):
-        variables = self.get_static_variables()
-        dynamic_variables = self.get_dynamic_variables(step) if step < self.steps else self.get_dynamic_default_variables()
-        variables.update(dynamic_variables)
-        return variables
-
-    def get_default_variables(self):
-        variables = self.get_static_variables()
-        variables.update(self.get_dynamic_default_variables())
-        return variables
-
-    def get_dynamic_variable_value(self, step, dyn_var):
-        start = float(dyn_var.start)
-        stepsize = dyn_var.get_stepsize(self.steps)
-        if dyn_var.logarithmic:
-            return start * pow(stepsize, float(step))
-        return start + stepsize * step
-
-    def get_total_time(self):
-        vars = self.get_default_variables()
-        return sum([parse_arg(x.duration, vars) for x in self.instructions])
-
-
-class DynamicVariables(QAbstractTableModel):
-    def __init__(self , parent = None, **kwargs):
-        QAbstractItemModel.__init__(self, parent)
-        var = DynamicProcessVariable()
-        var.name='TEST'
-        self.vars = kwargs.get('dynamic_variables', [var])
-
-    def rowCount(self, parent = None, *args, **kwargs):
-        return len(self.vars)
-
-    def columnCount(self, parent=None, *args, **kwargs):
-        return 1
-
-    def data(self, index, role = None):
-        if role == Qt.DisplayRole:
-            return self.vars[index.row()].name
-
-    def index(self, p_int, p_int_1, parent=None, *args, **kwargs):
-        return QModelIndex()
+from CycleControl.objects.hardware import *
+from CycleControl.helpers import *
 
 
 class Instruction(object):
-    def __init__(self, hardware = HardwareSetup()):
-        self.name = ''
-        self.duration = 0.0
-        self.stepsize = 0.0
+    def __init__(self, hardware = HardwareSetup(), **kwargs):
+        self._name = kwargs.get('name', '')
+        self._duration = kwargs.get('duration', '0.0')
+        self._stepsize = kwargs.get('stepsize', '0.0')
 
-        self.digital_pins = {board.id: '0' * 24 for board in hardware.pulseblasters}
-        self.analog_functions = {board.id: ['0'] * 8 for board in hardware.ni_boards}
+        self.digital_pins = {board.id: [False] * 24 for board in hardware.pulseblasters}
+        self.analog_functions = {board.id: ['0.01'] * 8 for board in hardware.ni_boards}
         self.novatech_functions = {board.id: ['0'] * 12 for board in hardware.novatechs}
 
     def __eq__(self, other):
         attrs = ['name', 'duration', 'stepsize', 'digital_pins', 'analog_functions', 'novatech_functions']
         return all(getattr(self, attr, None) == getattr(other, attr, None) for attr in attrs)
 
-    def set_digital_pins(self, flag_string):
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def duration(self):
+        return self._duration
+
+    @property
+    def stepsize(self):
+        return self._stepsize
+
+    @name.setter
+    def name(self, name):
         try:
-            self.digital_pins = str(flag_string)
+            self._name = str(name)
         except ValueError:
             pass
 
-    def set_name(self, name):
-        try:
-            self.name = str(name)
-        except ValueError:
-            pass
+    @duration.setter
+    def duration(self, duration):
+        self._duration = duration
 
-    def set_duration(self, duration):
-        try:
-            if float(duration) >= 0.0:
-                self.duration = duration
-        except ValueError:
-            self.duration = duration
 
-    def set_stepsize(self, stepsize,):
-        try:
-            if float(stepsize) >= 0:
-                self.stepsize = stepsize
-        except ValueError:
-            self.stepsize = stepsize
+    @stepsize.setter
+    def stepsize(self, stepsize):
+        self._stepsize = stepsize
 
 
 class DefaultSetup(Instruction):
     def __init__(self, hardware = HardwareSetup()):
-        self.digital_pins = {board.id: '0' * 24 for board in hardware.pulseblasters}
-        self.analog_functions = {board.id: ['0'] * 8 for board in hardware.ni_boards}
-        self.novatech_functions = {board.id: ['0'] * 12 for board in hardware.novatechs}
+        Instruction.__init__(self, hardware)
+        self._name = 'Default'
 
     @property
     def name(self):
-        return 'Default'
+        return self._name
 
     @property
     def duration(self):
-        return 0
+        return self._duration
 
     @property
     def stepsize(self):
-        return 0
+        return self._stepsize
 
-    def set_name(self, name):
+    @name.setter
+    def name(self, name):
         pass
 
-    def set_duration(self, duration):
+    @duration.setter
+    def duration(self, duration):
         pass
 
-    def set_stepsize(self, stepsize):
+    @stepsize.setter
+    def stepsize(self, stepsize):
         pass
 
 
 class StaticProcessVariable(object):
-    def __init__(self):
-        self.name = ''
-        self.default = '0.0'
+    PROPERTIES = ['name', 'default']
+    def __init__(self, **kwargs):
+        self._name = kwargs.get('name', '')
+        self._default = kwargs.get('default', '0.0')
 
     def __eq__(self, other):
-        attrs = ['name', 'default']
-        return all(getattr(self, attr, None) == getattr(other, attr, None) for attr in attrs)
+        return all(getattr(self, attr, None) == getattr(other, attr, None) for attr in self.PROPERTIES)
 
-    def set_name(self, name):
+    def __getitem__(self, idx):
+        return getattr(self, self.PROPERTIES[idx])
+
+    def __setitem__(self, idx, val):
+        setattr(self, self.PROPERTIES[idx], val)
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def default(self):
+        return self._default
+
+    @name.setter
+    def name(self, val):
         try:
-            self.name = sterilize_string(name)
+            self._name = sterilize_string(val)
         except ValueError:
             pass
 
-    def set_default(self, default):
+    @default.setter
+    def default(self, default):
         try:
             float(default)
-            self.default = default
+            self._default = default
         except ValueError:
             pass
 
 
 class DynamicProcessVariable(StaticProcessVariable):
-    def __init__(self):
-        super(DynamicProcessVariable, self).__init__()
-        self.start = '0.0'
-        self.end = '0.0'
-        self.logarithmic = False
-        self.send = False
+    PROPERTIES = ['name', 'default', 'start', 'end', 'logarithmic', 'send', ]
 
-    def __eq__(self, other):
-        attrs = ['name', 'default', 'start', 'end', 'logarithmic', 'send', ]
-        return all(getattr(self, attr, None) == getattr(other, attr, None) for attr in attrs)
+    def __init__(self, **kwargs):
+        StaticProcessVariable.__init__(self, **kwargs)
+        self._start = kwargs.get('start', '0.0')
+        self._end = kwargs.get('end', '0.0')
+        self._logarithmic = kwargs.get('logarithmic', False)
+        self._send = kwargs.get('send', False)
 
-    def set_start(self, start):
+    @property
+    def start(self):
+        return self._start
+
+    @property
+    def end(self):
+        return self._end
+
+    @property
+    def logarithmic(self):
+        return self._logarithmic
+
+    @property
+    def send(self):
+        return self._send
+
+    @start.setter
+    def start(self, start):
         try:
             float(start)
-            self.start = start
+            self._start = start
         except ValueError:
             pass
 
-    def set_end(self, end):
+    @end.setter
+    def end(self, end):
         try:
             float(end)
-            self.end = end
+            self._end = end
         except ValueError:
             pass
 
-    def set_log(self, state):
+    @logarithmic.setter
+    def logarithmic(self, state):
         try:
-            self.logarithmic = bool(state)
+            self._logarithmic = bool(state)
         except ValueError:
             pass
 
-    def set_send(self, state):
+    @send.setter
+    def send(self, state):
         try:
-            self.send = bool(state)
+            self._send = bool(state)
         except ValueError:
             pass
 
@@ -345,26 +178,3 @@ class DynamicProcessVariable(StaticProcessVariable):
         if self.logarithmic:
             return pow(end / start, 1.0 / float(steps))
         return (end - start) / float(steps)
-
-
-class cycle_thread(Thread):
-    def __init__(self, programmer, cycle):
-        Thread.__init__(self)
-        self.programmer = programmer
-        self.cycle = cycle
-
-    def run(self):
-        self.programmer.program_device_handler(self.cycle)
-        self.programmer.start_device_handler()
-        print('Cycle complete. Waiting for next start command..')
-
-
-class RunningLock(object):
-    def __init__(self):
-        self.running = False
-
-    def __enter__(self):
-        self.running = True
-
-    def __exit__(self, *args):
-        self.running = False

@@ -91,6 +91,9 @@ class Board (object):
     def __getitem__(self, idx):
         return self.channels[idx]
 
+    def num_active(self):
+        return sum([1 for channel in self.channels if channel.enabled])
+
 
 class Channel(object):
     def __init__(self):
@@ -130,6 +133,9 @@ class NovatechBoard(Board):
         super(NovatechBoard, self).__init__(port)
         self.channels = [NovatechChannel() for x in range(4)]
 
+    def num_active(self):
+        result = super(NovatechBoard, self).num_active()
+        return result * 3
 
 class NovatechChannel(Channel):
     def __init__(self):

@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar)
-from cycle import *
+
+from CycleControl.objects.cycle import *
 
 def prepare_sample_plot_data(domain, data):
     new_domain = []
