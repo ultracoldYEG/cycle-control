@@ -13,18 +13,6 @@ ROOT_PATH = os.getcwd()
 
 Ui_MainWindow, QMainWindow = loadUiType(os.path.join(ROOT_PATH, 'CycleControl', 'cycle_control.ui'))
 
-class Controller(object):
-    def __init__(self):
-        self.hardware = HardwareSetup()
-        self.default_setup = DefaultSetup(self.hardware)
-        self.programmer = Programmer(self)
-        self.procedure = Procedure(self)
-        self.proc_params = ProcedureParameters()
-
-    @property
-    def instructions(self):
-        return self.proc_params.instructions + [self.default_setup]
-
 
 class Main(QMainWindow, Ui_MainWindow):
     def __init__(self):
