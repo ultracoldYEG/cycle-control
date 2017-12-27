@@ -4,65 +4,84 @@
     "persistent": false, 
     "delay": 0.0
   }, 
-  "dynamic_variables": [
-    {
-      "name": "dyn_var1", 
-      "start": "500", 
-      "end": "0.0", 
-      "default": "0.0", 
-      "logarithmic": false, 
-      "send": true
-    }
-  ], 
-  "static_variables": [
-    {
-      "name": "TEST", 
-      "default": "30.2"
-    }
-  ], 
+  "dynamic_variables": [], 
+  "static_variables": [], 
   "instructions": [
     {
-      "name": "INST1", 
-      "duration": "1.2", 
+      "name": "OFF", 
+      "duration": "4", 
       "stepsize": "0.0", 
       "digital_pins": {
-        "0": [
-          true, 
-          false, 
-          true, 
-          true, 
-          false, 
-          true, 
-          false, 
-          true, 
-          false, 
-          true, 
-          false, 
-          false, 
-          false, 
-          false, 
-          false, 
-          false, 
-          false, 
-          false, 
-          false, 
-          false, 
-          false, 
-          false, 
-          false, 
-          false
-        ]
+        "1": "000000000000000000000000", 
+        "0": "000101000000000100000000"
       }, 
       "analog_functions": {
         "Dev1": [
-          "0.01", 
-          "0.01", 
-          "0.01", 
-          "0.01", 
-          "0.01", 
-          "0.01", 
-          "0.01", 
-          "0.01"
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ], 
+        "Dev0": [
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }, 
+      "novatech_functions": {
+        "COM0": [
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ]
+      }
+    }, 
+    {
+      "name": "ON", 
+      "duration": "3", 
+      "stepsize": "0.0", 
+      "digital_pins": {
+        "1": "000000000000000000000000", 
+        "0": "111111111111110111111111"
+      }, 
+      "analog_functions": {
+        "Dev1": [
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
+        ], 
+        "Dev0": [
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0", 
+          "0"
         ]
       }, 
       "novatech_functions": {

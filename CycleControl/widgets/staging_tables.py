@@ -5,9 +5,10 @@ from PyQt5 import QtCore
 from CycleControl.helpers import *
 
 class HardwareTable(QTableWidget):
-    def __init__(self, gui):
+    def __init__(self, controller, gui):
         super(HardwareTable, self).__init__()
         self.gui = gui
+        self.controller = controller
         self.insertColumn(0)
         self.insertColumn(1)
         self.setHorizontalHeaderItem(0, QTableWidgetItem('Name'))
@@ -56,7 +57,7 @@ class HardwareTable(QTableWidget):
         paste_row_pre = menu.addAction("Paste new instruction before")
         paste_row_aft = menu.addAction("Paste new instruction after")
         del_row = menu.addAction("Remove instruction")
-        if not self.gui.clipboard:
+        if not self.controller.clipboard:
             paste_row_pre.setEnabled(False)
             paste_row_aft.setEnabled(False)
         if len(self.selectedIndexes()) > 1:
@@ -90,8 +91,8 @@ class HardwareTable(QTableWidget):
 
 
 class AnalogTable(HardwareTable):
-    def __init__(self, gui):
-        super(AnalogTable, self).__init__(gui)
+    def __init__(self, controller, gui):
+        super(AnalogTable, self).__init__(controller, gui)
         self.insertColumn(2)
         self.setHorizontalHeaderItem(2, QTableWidgetItem('Stepsize'))
         self.fixedColumnNum = 3
@@ -102,7 +103,7 @@ class AnalogTable(HardwareTable):
         n = self.fixedColumnNum
         colors = [QColor(200,200,255), QColor(255,200,200)]
         self.colors = [QColor(255,255,255), QColor(255,255,255), QColor(255,255,255)]
-        for i, board in enumerate(self.gui.hardware.ni_boards):
+        for i, board in enumerate(self.controller.hardware.ni_boards):
             color = colors[i % 2]
             for channel in board.channels:
                 if channel.enabled:
@@ -113,18 +114,18 @@ class AnalogTable(HardwareTable):
 
     def update_inst(self, row, col):
         item = self.item(row, col)
-        inst = self.gui.proc_params.instructions[row]
+        inst = self.controller.proc_params.instructions[row]
 
         if item:
             item = item.text()
             if col == 0:
-                inst.set_name(item)
+                inst.name = item
             elif col == 1:
-                inst.set_duration(item)
+                inst.duration = item
             elif col == 2:
-                inst.set_stepsize(item)
+                inst.stepsize = item
             elif col > 2:
-                board, num = self.get_channel_by_col(col, self.gui.hardware.ni_boards)
+                board, num = self.get_channel_by_col(col, self.controller.hardware.ni_boards)
                 id = board.id
 
                 if self.is_valid_input(item, col):
@@ -136,7 +137,7 @@ class AnalogTable(HardwareTable):
                     print message
 
     def is_valid_input(self, item, col):
-        board, num = self.get_channel_by_col(col, self.gui.hardware.ni_boards)
+        board, num = self.get_channel_by_col(col, self.controller.hardware.ni_boards)
         channel = board.channels[num]
         lims = (channel.min, channel.max)
         try:
@@ -146,12 +147,12 @@ class AnalogTable(HardwareTable):
             return True
         except:
             pass
-        for stat_var in self.gui.proc_params.static_variables:
+        for stat_var in self.controller.proc_params.static_variables:
             if stat_var.name == item:
                 val = float(stat_var.default)
                 if val < lims[0] or val > lims[1]:
                     return False
-        for dyn_var in self.gui.proc_params.dynamic_variables:
+        for dyn_var in self.controller.proc_params.dynamic_variables:
             if dyn_var.name == item:
                 edge_cases = [float(dyn_var.start), float(dyn_var.end), float(dyn_var.default)]
                 if any([val < lims[0] or val > lims[1] for val in edge_cases]):
@@ -160,7 +161,7 @@ class AnalogTable(HardwareTable):
 
     def insert_row(self, row):
         self.insertRow(row)
-        inst = self.gui.proc_params.instructions[row]
+        inst = self.controller.proc_params.instructions[row]
         for col in range((self.columnCount())):
             if col == 0:
                 new_string = inst.name
@@ -169,7 +170,7 @@ class AnalogTable(HardwareTable):
             elif col == 2:
                 new_string = str(inst.stepsize)
             else:
-                board, num = self.get_channel_by_col(col, self.gui.hardware.ni_boards)
+                board, num = self.get_channel_by_col(col, self.controller.hardware.ni_boards)
                 id = board.id
                 new_string = inst.analog_functions.get(id)[num]
 
@@ -189,8 +190,8 @@ class AnalogTable(HardwareTable):
 
 
 class NovatechTable(HardwareTable):
-    def __init__(self, gui):
-        super(NovatechTable, self).__init__(gui)
+    def __init__(self, controller, gui):
+        super(NovatechTable, self).__init__(controller, gui)
         self.insertColumn(2)
         self.setHorizontalHeaderItem(2, QTableWidgetItem('Stepsize'))
         self.fixedColumnNum = 3
@@ -201,7 +202,7 @@ class NovatechTable(HardwareTable):
         n = self.fixedColumnNum
         colors = [QColor(200,200,255), QColor(255,200,200), QColor(200,255,200), QColor(200,200,200)]
         self.colors = [QColor(255,255,255), QColor(255,255,255), QColor(255,255,255)]
-        for i, board in enumerate(self.gui.hardware.novatechs):
+        for i, board in enumerate(self.controller.hardware.novatechs):
             for j, channel in enumerate(board.channels):
                 color = colors[j % 4]
                 if channel.enabled:
@@ -213,26 +214,26 @@ class NovatechTable(HardwareTable):
 
     def update_inst(self, row, col):
         item = self.item(row, col)
-        inst = self.gui.proc_params.instructions[row]
+        inst = self.controller.proc_params.instructions[row]
 
         if item:
             item = item.text()
             if col == 0:
-                inst.set_name(item)
+                inst.name = item
             elif col == 1:
-                inst.set_duration(item)
+                inst.duration = item
             elif col == 2:
-                inst.set_stepsize(item)
+                inst.stepsize = item
             elif col > 2:
                 col2 = (col - self.fixedColumnNum) / 3 + self.fixedColumnNum
                 rem = (col - self.fixedColumnNum) % 3
-                board, num = self.get_channel_by_col(col2, self.gui.hardware.novatechs)
+                board, num = self.get_channel_by_col(col2, self.controller.hardware.novatechs)
                 id = board.id
                 inst.novatech_functions.get(id)[3*num+rem] = str(item)
 
     def insert_row(self, row):
         self.insertRow(row)
-        inst = self.gui.proc_params.instructions[row]
+        inst = self.controller.proc_params.instructions[row]
         for col in range((self.columnCount())):
             if col == 0:
                 new_string = inst.name
@@ -243,7 +244,7 @@ class NovatechTable(HardwareTable):
             else:
                 col2 = (col - self.fixedColumnNum) / 3 + self.fixedColumnNum
                 rem = (col - self.fixedColumnNum) % 3
-                board, num = self.get_channel_by_col(col2, self.gui.hardware.novatechs)
+                board, num = self.get_channel_by_col(col2, self.controller.hardware.novatechs)
                 id = board.id
                 new_string = inst.novatech_functions.get(id)[3*num + rem]
 
@@ -263,8 +264,8 @@ class NovatechTable(HardwareTable):
 
 
 class DigitalTable(HardwareTable):
-    def __init__(self, gui):
-        super(DigitalTable, self).__init__(gui)
+    def __init__(self, controller, gui):
+        super(DigitalTable, self).__init__(controller, gui)
         self.colors = [QColor(255,255,255), QColor(255,255,255)]
 
     def redraw_cols(self):
@@ -273,7 +274,7 @@ class DigitalTable(HardwareTable):
         colors = [QColor(200,200,255), QColor(255,200,200)]
         self.colors = [QColor(255,255,255), QColor(255,255,255)]
         header = self.horizontalHeader()
-        for i, board in enumerate(self.gui.hardware.pulseblasters):
+        for i, board in enumerate(self.controller.hardware.pulseblasters):
             color = colors[i % 2]
             for j, channel in enumerate(board.channels):
                 if channel.enabled:
@@ -286,19 +287,19 @@ class DigitalTable(HardwareTable):
 
     def update_inst(self, row, col):
         item = self.item(row, col)
-        inst = self.gui.proc_params.instructions[row]
+        inst = self.controller.proc_params.instructions[row]
 
         if item:
             item = item.text()
             if col == 0:
-                inst.set_name(item)
+                inst.name = item
             elif col == 1:
-                inst.set_duration(item)
+                inst.duration = item
             self.redraw_row(row)
 
     def insert_row(self, row):
         self.insertRow(row)
-        inst = self.gui.proc_params.instructions[row]
+        inst = self.controller.proc_params.instructions[row]
 
         for col in range(self.columnCount()):
             if col == 0:
@@ -308,7 +309,7 @@ class DigitalTable(HardwareTable):
                 self.setItem(row, col, QTableWidgetItem(str(inst.duration)))
 
             else:
-                board, num = self.get_channel_by_col(col, self.gui.hardware.pulseblasters)
+                board, num = self.get_channel_by_col(col, self.controller.hardware.pulseblasters)
                 id = board.id
                 state = bool(int(inst.digital_pins.get(id)[num]))
                 self.setCellWidget(row, col, TableCheckBox(self, row, col, state))
@@ -321,8 +322,8 @@ class DigitalTable(HardwareTable):
                 self.cellWidget(row, col).row = row
 
     def update_digital(self, row, col, state):
-        inst = self.gui.proc_params.instructions[row]
-        board, num = self.get_channel_by_col(col, self.gui.hardware.pulseblasters)
+        inst = self.controller.proc_params.instructions[row]
+        board, num = self.get_channel_by_col(col, self.controller.hardware.pulseblasters)
         id = board.id
         digits = inst.digital_pins.get(id)
         if state:

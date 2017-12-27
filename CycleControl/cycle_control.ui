@@ -265,7 +265,7 @@ QPushButton:pressed {background-color: rgb(170, 190, 255)}</string>
       <item>
        <widget class="QTabWidget" name="tabWidget_2">
         <property name="currentIndex">
-         <number>2</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="tab">
          <attribute name="title">

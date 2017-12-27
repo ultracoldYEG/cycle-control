@@ -7,8 +7,9 @@ from CycleControl.mock_PyDAQmx import *
 
 
 class HardwareTree(QTreeWidget):
-    def __init__(self, gui):
+    def __init__(self, controller, gui):
         QTreeWidget.__init__(self)
+        self.controller = controller
         self.gui = gui
         self.itemChanged.connect(self.cell_changed_handler)
         self.setStyleSheet(load_stylesheet('hardware_tree_cb.qss'))
@@ -29,8 +30,8 @@ class HardwareTree(QTreeWidget):
 
 
 class DigitalTree(HardwareTree):
-    def __init__(self, gui):
-        HardwareTree.__init__(self, gui)
+    def __init__(self, controller, gui):
+        HardwareTree.__init__(self, controller, gui)
         item = QTreeWidgetItem()
         item.setData(0, QtCore.Qt.DisplayRole, 'Channel')
         item.setData(1, QtCore.Qt.DisplayRole, 'Analog Pin')
@@ -44,12 +45,12 @@ class DigitalTree(HardwareTree):
         with self.gui.updating:
             if item.parent():
                 board_index = self.indexOfTopLevelItem(item.parent())
-                channel = self.gui.hardware.pulseblasters[board_index].channels[int(item.text(0))]
+                channel = self.controller.hardware.pulseblasters[board_index].channels[int(item.text(0))]
                 if col == 0:
                     channel.enabled = bool(item.checkState(col))
             else:
                 board_index = self.indexOfTopLevelItem(item)
-                board = self.gui.hardware.pulseblasters[board_index]
+                board = self.controller.hardware.pulseblasters[board_index]
                 if col == 0:
                     board.id = item.text(col)
 
@@ -57,7 +58,7 @@ class DigitalTree(HardwareTree):
         with self.gui.updating:
             for i in range(self.topLevelItemCount()):
                 self.takeTopLevelItem(0)
-            for board in self.gui.hardware.pulseblasters:
+            for board in self.controller.hardware.pulseblasters:
                 board_root = QTreeWidgetItem(self, [board.id])
                 board_root.setData(1, QtCore.Qt.DisplayRole, board.analog_pin)
                 board_root.setData(2, QtCore.Qt.DisplayRole, board.novatech_pin)
@@ -68,8 +69,8 @@ class DigitalTree(HardwareTree):
 
 
 class AnalogTree(HardwareTree):
-    def __init__(self, gui):
-        HardwareTree.__init__(self, gui)
+    def __init__(self, controller, gui):
+        HardwareTree.__init__(self, controller, gui)
         item = QTreeWidgetItem()
         item.setData(0, QtCore.Qt.DisplayRole, 'Virtual Channel')
         item.setData(1, QtCore.Qt.DisplayRole, 'Label')
@@ -88,7 +89,7 @@ class AnalogTree(HardwareTree):
         with self.gui.updating:
             if item.parent():
                 board_index = self.indexOfTopLevelItem(item.parent())
-                channel = self.gui.hardware.ni_boards[board_index].channels[int(item.text(0))]
+                channel = self.controller.hardware.ni_boards[board_index].channels[int(item.text(0))]
                 if col == 0:
                     channel.enabled = bool(item.checkState(col))
                 elif col == 1:
@@ -101,7 +102,7 @@ class AnalogTree(HardwareTree):
                     channel.scaling = item.text(col)
             else:
                 board_index = self.indexOfTopLevelItem(item)
-                board = self.gui.hardware.ni_boards[board_index]
+                board = self.controller.hardware.ni_boards[board_index]
                 if col == 0:
                     board.id = item.text(col)
 
@@ -109,7 +110,7 @@ class AnalogTree(HardwareTree):
         with self.gui.updating:
             for i in range(self.topLevelItemCount()):
                 self.takeTopLevelItem(0)
-            for board in self.gui.hardware.ni_boards:
+            for board in self.controller.hardware.ni_boards:
                 board_root = QTreeWidgetItem(self, [board.id])
                 board_root.setFlags(board_root.flags() | QtCore.Qt.ItemIsEditable)
                 for i, channel in enumerate(board.channels):
@@ -128,8 +129,8 @@ class AnalogTree(HardwareTree):
             self.editItem(item, col)
 
 class NovatechTree(HardwareTree):
-    def __init__(self, gui):
-        HardwareTree.__init__(self, gui)
+    def __init__(self, controller, gui):
+        HardwareTree.__init__(self, controller, gui)
         item = QTreeWidgetItem()
         item.setData(0, QtCore.Qt.DisplayRole, 'Channel')
         self.setHeaderItem(item)
@@ -141,12 +142,12 @@ class NovatechTree(HardwareTree):
         with self.gui.updating:
             if item.parent():
                 board_index = self.indexOfTopLevelItem(item.parent())
-                channel = self.gui.hardware.novatechs[board_index].channels[int(item.text(0))]
+                channel = self.controller.hardware.novatechs[board_index].channels[int(item.text(0))]
                 if col == 0:
                     channel.enabled = bool(item.checkState(col))
             else:
                 board_index = self.indexOfTopLevelItem(item)
-                board = self.gui.hardware.novatechs[board_index]
+                board = self.controller.hardware.novatechs[board_index]
                 if col == 0:
                     board.id = item.text(col)
 
@@ -154,7 +155,7 @@ class NovatechTree(HardwareTree):
         with self.gui.updating:
             for i in range(self.topLevelItemCount()):
                 self.takeTopLevelItem(0)
-            for board in self.gui.hardware.novatechs:
+            for board in self.controller.hardware.novatechs:
                 board_root = QTreeWidgetItem(self, [board.id])
                 board_root.setFlags(board_root.flags() | QtCore.Qt.ItemIsEditable)
                 for i, channel in enumerate(board.channels):
@@ -183,7 +184,7 @@ class ScaleComboBox(QComboBox):
 
     def get_channel(self):
         board_index = self.tree.indexOfTopLevelItem(self.item.parent())
-        return self.tree.gui.hardware.ni_boards[board_index].channels[int(self.item.text(0))]
+        return self.tree.controller.hardware.ni_boards[board_index].channels[int(self.item.text(0))]
 
     def item_changed_handler(self, text):
         channel = self.get_channel()

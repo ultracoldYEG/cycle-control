@@ -9,17 +9,16 @@ import time
 
 
 class Procedure(object):
-    def __init__(self, gui):
+    def __init__(self, controller):
         self.parameters = ProcedureParameters()
-        self.programmer = gui.programmer
-        self.gui = gui
+        self.programmer = controller.programmer
         self.current_step = 0
         self.activated = False
         self.run_lock = RunningLock()
         self.cycle_number = 0
         self.current_variables = {}
 
-    def start_sequence(self):
+    def start_sequence(self, gui = None):
         if len(self.parameters.instructions) < 1:
             print('Put in more instructions')
             return
@@ -30,18 +29,20 @@ class Procedure(object):
                     break
                 self.current_variables = self.parameters.get_cycle_variables(self.current_step)
                 cycle = Cycle(self.parameters.instructions, self.current_variables)
-                self.run_cycle(cycle)
+                self.run_cycle(cycle, gui)
                 time.sleep(self.parameters.delay)
                 self.current_step += 1
                 self.cycle_number += 1
 
-    def run_cycle(self, cycle):
+    def run_cycle(self, cycle, gui = None):
         thread = cycle_thread(self.programmer, cycle)
-        self.gui.worker.procedure = self
-        self.gui.worker.start()
+        if gui is not None:
+            gui.worker.procedure = self
+            gui.worker.start()
         thread.start()
         thread.join()
-        self.gui.worker.wait()
+        if gui is not None:
+            gui.worker.wait()
 
 
 class ProcedureParameters(object):
@@ -66,7 +67,7 @@ class ProcedureParameters(object):
                     return False
         return True
 
-    def save_to_file(self, fp, gui):
+    def save_to_file(self, fp):
         instructions = []
         for inst in self.instructions:
             instructions.append( OrderedDict([(attr, getattr(inst, attr)) for attr in [
@@ -110,7 +111,7 @@ class ProcedureParameters(object):
                 ('instructions', instructions),
             ]), f, indent = 2)
 
-    def load_from_file(self, fp, gui):
+    def load_from_file(self, fp, controller):
         self.instructions = []
         self.static_variables = []
         self.dynamic_variables = []
@@ -122,10 +123,10 @@ class ProcedureParameters(object):
             context = json.load(f)
 
         for inst in context.get('instructions'):
-            i = Instruction(gui.hardware)
-            i.set_name(inst.get('name'))
-            i.set_duration(inst.get('duration'))
-            i.set_stepsize(inst.get('stepsize'))
+            i = Instruction(controller.hardware)
+            i.name = inst.get('name')
+            i.duration = inst.get('duration')
+            i.stepsize = inst.get('stepsize')
             i.digital_pins.update(inst.get('digital_pins'))
             i.analog_functions.update(inst.get('analog_functions'))
             i.novatech_functions.update(inst.get('novatech_functions'))
@@ -133,18 +134,18 @@ class ProcedureParameters(object):
 
         for var in context.get('dynamic_variables'):
             dyn_var = DynamicProcessVariable()
-            dyn_var.set_name(var.get('name'))
-            dyn_var.set_start(var.get('start'))
-            dyn_var.set_end(var.get('end'))
-            dyn_var.set_default(var.get('default'))
-            dyn_var.set_log(var.get('logarithmic'))
-            dyn_var.set_send(var.get('send'))
+            dyn_var.name = var.get('name')
+            dyn_var.start = var.get('start')
+            dyn_var.end = var.get('end')
+            dyn_var.default = var.get('default')
+            dyn_var.logarithmic = var.get('logarithmic')
+            dyn_var.send = var.get('send')
             self.dynamic_variables.append(dyn_var)
 
         for var in context.get('static_variables'):
             stat_var = StaticProcessVariable()
-            stat_var.set_name(var.get('name'))
-            stat_var.set_default(var.get('default'))
+            stat_var.name = var.get('name')
+            stat_var.default = var.get('default')
             self.static_variables.append(stat_var)
 
         params = context.get('sequencing_parameters')

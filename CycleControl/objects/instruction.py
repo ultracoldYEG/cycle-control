@@ -8,7 +8,7 @@ class Instruction(object):
         self._duration = kwargs.get('duration', '0.0')
         self._stepsize = kwargs.get('stepsize', '0.0')
 
-        self.digital_pins = {board.id: [False] * 24 for board in hardware.pulseblasters}
+        self.digital_pins = {board.id: '0' * 24 for board in hardware.pulseblasters}
         self.analog_functions = {board.id: ['0.01'] * 8 for board in hardware.ni_boards}
         self.novatech_functions = {board.id: ['0'] * 12 for board in hardware.novatechs}
 
@@ -31,7 +31,7 @@ class Instruction(object):
     @name.setter
     def name(self, name):
         try:
-            self._name = str(name)
+            self._name = sterilize_string(name)
         except ValueError:
             pass
 
@@ -175,6 +175,9 @@ class DynamicProcessVariable(StaticProcessVariable):
         end = float(self.end)
         if steps > 1:
             steps -= 1
-        if self.logarithmic:
-            return pow(end / start, 1.0 / float(steps))
-        return (end - start) / float(steps)
+        try:
+            if self.logarithmic:
+                return pow(end / start, 1.0 / float(steps))
+            return (end - start) / float(steps)
+        except Exception:
+            return 'NaN'

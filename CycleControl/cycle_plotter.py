@@ -27,6 +27,7 @@ def prepare_sample_plot_data(domain, data):
 class CyclePlotter(object):
     def __init__(self, gui):
         self.gui = gui
+        self.controller = gui.controller
         self.fig = plt.Figure()
         self.ax = self.fig.add_subplot(111)
         self.step = 1
@@ -57,17 +58,17 @@ class CyclePlotter(object):
         self.gui.digital_channel_combo.clear()
         self.gui.analog_channel_combo.clear()
         self.gui.novatech_channel_combo.clear()
-        for board in self.gui.hardware.pulseblasters:
+        for board in self.controller.hardware.pulseblasters:
             for i, channel in enumerate(board.channels):
                 if channel.enabled:
                     self.add_checkable_combo_item(self.gui.digital_channel_combo, i, board.id, i)
 
-        for board in self.gui.hardware.ni_boards:
+        for board in self.controller.hardware.ni_boards:
             for i, channel in enumerate(board.channels):
                 if channel.enabled:
                     self.add_checkable_combo_item(self.gui.analog_channel_combo, channel.label, board.id, i)
 
-        for board in self.gui.hardware.novatechs:
+        for board in self.controller.hardware.novatechs:
             for i, channel in enumerate(board.channels):
                 if channel.enabled:
                     for j, param in enumerate(['Amp', 'Freq', 'Phase']):
@@ -79,13 +80,13 @@ class CyclePlotter(object):
         self.update_data()
 
     def update_data(self):
-        if not len(self.gui.proc_params.instructions):
+        if not len(self.controller.proc_params.instructions):
             print('Put in more instructions')
             return
         self.fig.clf()
         self.ax = self.fig.add_subplot(111)
         self.ax.grid()
-        self.cycle = Cycle(self.gui.proc_params.instructions, self.gui.proc_params.get_cycle_variables(self.step - 1))
+        self.cycle = Cycle(self.controller.proc_params.instructions, self.controller.proc_params.get_cycle_variables(self.step - 1))
         self.cycle.create_waveforms()
 
         self.plot_digital_channels()
