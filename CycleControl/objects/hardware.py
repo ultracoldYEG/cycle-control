@@ -84,8 +84,10 @@ class HardwareSetup(object):
 
 
 class Board (object):
-    def __init__(self, id):
+    CHANNEL_NUM = 1
+    def __init__(self, id, controller):
         self.id = id
+        self.parent = controller
         self.channels = []
 
     def __getitem__(self, idx):
@@ -96,32 +98,44 @@ class Board (object):
 
 
 class Channel(object):
-    def __init__(self):
+    def __init__(self, parent):
+        self.parent = parent
         self.enabled = False
+        self.label = ''
+
+    @property
+    def row(self):
+        return self.parent.channels.index(self)
 
 
 class PulseBlasterBoard(Board):
-    def __init__(self, num):
-        super(PulseBlasterBoard, self).__init__(num)
+    CHANNEL_NUM = 24
+    def __init__(self, num, controller):
+        super(PulseBlasterBoard, self).__init__(num, controller)
         self.analog_pin = None
         self.novatech_pin = None
-        self.channels = [PulseBlasterChannel() for x in range(24)]
+        self.channels = [PulseBlasterChannel(self) for x in range(self.CHANNEL_NUM)]
 
+
+    @property
+    def row(self):
+        return self.parent.hardware.pulseblasters.index(self)
 
 class PulseBlasterChannel(Channel):
-    def __init__(self):
-        super(PulseBlasterChannel, self).__init__()
+    def __init__(self, parent):
+        super(PulseBlasterChannel, self).__init__(parent)
 
 
 class NIBoard(Board):
-    def __init__(self, id):
-        super(NIBoard, self).__init__(id)
-        self.channels = [VirtualNIChannel() for x in range(8)]
+    CHANNEL_NUM = 8
+    def __init__(self, id, controller):
+        super(NIBoard, self).__init__(id, controller)
+        self.channels = [VirtualNIChannel(self) for x in range(self.CHANNEL_NUM)]
 
 
 class VirtualNIChannel(Channel):
-    def __init__(self):
-        super(VirtualNIChannel, self).__init__()
+    def __init__(self, parent):
+        super(VirtualNIChannel, self).__init__(parent)
         self.label = ''
         self.min = -1.0
         self.max = 1.0
@@ -129,14 +143,15 @@ class VirtualNIChannel(Channel):
 
 
 class NovatechBoard(Board):
-    def __init__(self, port):
-        super(NovatechBoard, self).__init__(port)
-        self.channels = [NovatechChannel() for x in range(4)]
+    CHANNEL_NUM = 4
+    def __init__(self, port, controller):
+        super(NovatechBoard, self).__init__(port, controller)
+        self.channels = [NovatechChannel(self) for x in range(self.CHANNEL_NUM)]
 
     def num_active(self):
         result = super(NovatechBoard, self).num_active()
         return result * 3
 
 class NovatechChannel(Channel):
-    def __init__(self):
-        super(NovatechChannel, self).__init__()
+    def __init__(self, parent):
+        super(NovatechChannel, self).__init__(parent)

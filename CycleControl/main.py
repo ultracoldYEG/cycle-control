@@ -3,6 +3,7 @@ from PyQt5.uic import loadUiType
 from CycleControl.objects.cycle_controller import *
 from CycleControl.cycle_plotter import *
 from CycleControl.models.instruction import *
+from CycleControl.models.hardware import *
 from CycleControl.widgets.staging_tables import *
 
 from widgets import *
@@ -35,6 +36,10 @@ class DynamicVariableEditor(DynVarForm, DynVarBase):
         self._data_mapper.addMapping(self.dyn_var_log, 4)
         self._data_mapper.addMapping(self.dyn_var_send, 5)
         self._data_mapper.addMapping(self.dyn_var_stepsize, 6, 'text')
+
+        self.dyn_var_log.clicked.connect(self.dyn_var_log.clearFocus)
+        self.dyn_var_send.clicked.connect(self.dyn_var_send.clearFocus)
+
 
     def selectionChanged(self, current_index, old_index):
         self._data_mapper.setCurrentIndex(current_index.row())
@@ -95,7 +100,11 @@ class Main(QMainWindow, Ui_MainWindow):
         self.save_hardware_button.clicked.connect(self.save_hardware)
         self.new_hardware_button.clicked.connect(self.new_hardware)
 
-        self.digital_tree = hardware_trees.DigitalTree(controller, self)
+        #self.digital_tree = hardware_trees.DigitalTree(controller, self)
+
+        self.digital_model = PulseBlastersModel(controller, self)
+        self.digital_tree = QTreeView(self)
+        self.digital_tree.setModel(self.digital_model)
         self.analog_tree = hardware_trees.AnalogTree(controller, self)
         self.novatech_tree = hardware_trees.NovatechTree(controller, self)
 
@@ -260,9 +269,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.file_number.setText(str(val))
 
     def new_pb_handler(self):
-        pb = PulseBlasterBoard(str(len(self.controller.hardware.pulseblasters)))
-        self.controller.hardware.pulseblasters.append(pb)
-        self.digital_tree.redraw()
+        self.digital_model.new_board()
 
     def remove_pb_handler(self):
         item = self.digital_tree.currentItem()
