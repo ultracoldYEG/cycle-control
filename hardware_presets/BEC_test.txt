@@ -6,76 +6,100 @@
       "novatech_pin": null, 
       "channels": [
         {
-          "enabled": true
+          "enabled": true, 
+          "label": "digital 0"
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }
       ]
     }, 
@@ -85,76 +109,100 @@
       "novatech_pin": null, 
       "channels": [
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": false
+          "enabled": false, 
+          "label": ""
         }
       ]
     }
@@ -288,16 +336,20 @@
       "id": "COM0", 
       "channels": [
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }, 
         {
-          "enabled": true
+          "enabled": true, 
+          "label": ""
         }
       ]
     }

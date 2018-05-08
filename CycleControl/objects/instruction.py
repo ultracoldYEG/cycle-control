@@ -49,6 +49,8 @@ class DefaultSetup(Instruction):
     def __init__(self, hardware = HardwareSetup()):
         Instruction.__init__(self, hardware)
         self._name = 'Default'
+        self._duration = '-'
+        self._stepsize = '-'
 
     @property
     def name(self):

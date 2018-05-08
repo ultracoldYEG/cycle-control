@@ -1,0 +1,137 @@
+{
+  "pulseblasters": [
+    {
+      "id": "5", 
+      "analog_pin": null, 
+      "novatech_pin": null, 
+      "channels": [
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": true
+        }
+      ]
+    }
+  ], 
+  "ni_boards": [], 
+  "novatechs": [
+    {
+      "id": "COM0", 
+      "channels": [
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }
+      ]
+    }, 
+    {
+      "id": "COM2", 
+      "channels": [
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": false
+        }
+      ]
+    }, 
+    {
+      "id": "COM3", 
+      "channels": [
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": true
+        }, 
+        {
+          "enabled": false
+        }, 
+        {
+          "enabled": true
+        }
+      ]
+    }
+  ]
+}

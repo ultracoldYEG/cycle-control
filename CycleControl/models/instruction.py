@@ -122,7 +122,7 @@ class CurrentVariablesModel(QAbstractTableModel):
 
     def new_vars(self, new_var_dict):
         self.vars = new_var_dict.items()
-        self.dataChanged.emit(self.index(0, 0), self.index(self.rowCount() - 1, self.columnCount() - 1))
+        self.modelReset.emit()
 
     def data(self, index, role = None):
         if role in (Qt.DisplayRole, Qt.EditRole):

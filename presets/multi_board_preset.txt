@@ -4,7 +4,24 @@
     "persistent": false, 
     "delay": 0.0
   }, 
-  "dynamic_variables": [], 
+  "dynamic_variables": [
+    {
+      "name": "dynamic_variable_0", 
+      "start": "0.0", 
+      "end": "0.0", 
+      "default": "0.0", 
+      "logarithmic": false, 
+      "send": false
+    }, 
+    {
+      "name": "var2", 
+      "start": "0.0", 
+      "end": "1", 
+      "default": "0.0", 
+      "logarithmic": false, 
+      "send": true
+    }
+  ], 
   "static_variables": [], 
   "instructions": [
     {
@@ -149,7 +166,7 @@
       }
     }, 
     {
-      "name": "opt pump", 
+      "name": "optpump", 
       "duration": "600e-6", 
       "stepsize": "0.001", 
       "digital_pins": {
@@ -807,7 +824,7 @@
       }
     }, 
     {
-      "name": "trigger1 hold", 
+      "name": "trigger1hold", 
       "duration": "50e-6", 
       "stepsize": "0", 
       "digital_pins": {
@@ -854,7 +871,7 @@
       }
     }, 
     {
-      "name": "trigger pause", 
+      "name": "triggerpause", 
       "duration": "80e-3", 
       "stepsize": "0", 
       "digital_pins": {
@@ -901,7 +918,7 @@
       }
     }, 
     {
-      "name": "probe shutter 2", 
+      "name": "probeshutter2", 
       "duration": "3e-3", 
       "stepsize": "0", 
       "digital_pins": {
@@ -995,7 +1012,7 @@
       }
     }, 
     {
-      "name": "trigger2 hold", 
+      "name": "trigger2hold", 
       "duration": "50e-6", 
       "stepsize": "0", 
       "digital_pins": {
@@ -1042,7 +1059,7 @@
       }
     }, 
     {
-      "name": "trigger pause", 
+      "name": "triggerpause", 
       "duration": "80e-3", 
       "stepsize": "0", 
       "digital_pins": {
@@ -1089,7 +1106,7 @@
       }
     }, 
     {
-      "name": "probe shutter 3", 
+      "name": "probeshutter3", 
       "duration": "3e-3", 
       "stepsize": "0", 
       "digital_pins": {
@@ -1183,7 +1200,7 @@
       }
     }, 
     {
-      "name": "trigger3 pause", 
+      "name": "trigger3pause", 
       "duration": "50e-3", 
       "stepsize": "0", 
       "digital_pins": {

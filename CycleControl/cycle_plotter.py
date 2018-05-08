@@ -61,18 +61,20 @@ class CyclePlotter(object):
         for board in self.controller.hardware.pulseblasters:
             for i, channel in enumerate(board.channels):
                 if channel.enabled:
-                    self.add_checkable_combo_item(self.gui.digital_channel_combo, i, board.id, i)
+                    label = 'Board {} - {} {}'.format(board.id, i, channel.label)
+                    self.add_checkable_combo_item(self.gui.digital_channel_combo, label, board.id, i)
 
         for board in self.controller.hardware.ni_boards:
             for i, channel in enumerate(board.channels):
                 if channel.enabled:
-                    self.add_checkable_combo_item(self.gui.analog_channel_combo, channel.label, board.id, i)
+                    label = '{} - {} {}'.format(board.id, i, channel.label)
+                    self.add_checkable_combo_item(self.gui.analog_channel_combo, label, board.id, i)
 
         for board in self.controller.hardware.novatechs:
             for i, channel in enumerate(board.channels):
                 if channel.enabled:
                     for j, param in enumerate(['Amp', 'Freq', 'Phase']):
-                        label = board.id + ' '+ str(i) + ' ' + param
+                        label = '{} - {} {} ({})'.format(board.id, i, channel.label, param)
                         self.add_checkable_combo_item(self.gui.novatech_channel_combo, label, board.id, 3*i + j)
 
     def update_step(self, val):

@@ -1,1 +1,1 @@
-__all__ = ['staging_tables', 'hardware_trees']
+__all__ = ['staging_tables']

@@ -1,49 +1,12 @@
-from PyQt5.uic import loadUiType
-
-from CycleControl.objects.cycle_controller import *
 from CycleControl.cycle_plotter import *
 from CycleControl.models.instruction import *
 from CycleControl.models.hardware import *
 from CycleControl.widgets.staging_tables import *
-
-from widgets import *
+from CycleControl.widgets.variable_editor import *
 
 ROOT_PATH = os.getcwd()
 
 Ui_MainWindow, QMainWindow = loadUiType(os.path.join(ROOT_PATH, 'CycleControl', 'cycle_control.ui'))
-DynVarBase, DynVarForm = loadUiType(os.path.join(ROOT_PATH, 'CycleControl', 'dynamic_var_widget.ui'))
-
-class DynamicVariableEditor(DynVarForm, DynVarBase):
-    def __init__(self, parent = None):
-        super(DynamicVariableEditor, self).__init__()
-        self.setupUi(self)
-        self._model = None
-        self._data_mapper = QDataWidgetMapper(self)
-
-    @property
-    def model(self):
-        return self._model
-
-    @model.setter
-    def model(self, model):
-        self._model = model
-        self._data_mapper.setModel(model)
-
-        self._data_mapper.addMapping(self.dyn_var_name, 0)
-        self._data_mapper.addMapping(self.dyn_var_default, 1)
-        self._data_mapper.addMapping(self.dyn_var_start, 2)
-        self._data_mapper.addMapping(self.dyn_var_end, 3)
-        self._data_mapper.addMapping(self.dyn_var_log, 4)
-        self._data_mapper.addMapping(self.dyn_var_send, 5)
-        self._data_mapper.addMapping(self.dyn_var_stepsize, 6, 'text')
-
-        self.dyn_var_log.clicked.connect(self.dyn_var_log.clearFocus)
-        self.dyn_var_send.clicked.connect(self.dyn_var_send.clearFocus)
-
-
-    def selectionChanged(self, current_index, old_index):
-        self._data_mapper.setCurrentIndex(current_index.row())
-
 
 class Main(QMainWindow, Ui_MainWindow):
     def __init__(self, controller):
@@ -100,13 +63,18 @@ class Main(QMainWindow, Ui_MainWindow):
         self.save_hardware_button.clicked.connect(self.save_hardware)
         self.new_hardware_button.clicked.connect(self.new_hardware)
 
-        #self.digital_tree = hardware_trees.DigitalTree(controller, self)
-
         self.digital_model = PulseBlastersModel(controller, self)
         self.digital_tree = QTreeView(self)
         self.digital_tree.setModel(self.digital_model)
-        self.analog_tree = hardware_trees.AnalogTree(controller, self)
-        self.novatech_tree = hardware_trees.NovatechTree(controller, self)
+
+        self.analog_model = NIBoardsModel(controller, self)
+        self.analog_tree = QTreeView(self)
+        self.analog_tree.setItemDelegateForColumn(4, ComboDelegate(self))
+        self.analog_tree.setModel(self.analog_model)
+
+        self.novatech_model = NovatechsModel(controller, self)
+        self.novatech_tree = QTreeView(self)
+        self.novatech_tree.setModel(self.novatech_model)
 
         self.gridLayout_13.addWidget(self.digital_tree, 0, 0)
         self.gridLayout_13.addWidget(self.analog_tree, 0, 1)
@@ -269,43 +237,30 @@ class Main(QMainWindow, Ui_MainWindow):
         self.file_number.setText(str(val))
 
     def new_pb_handler(self):
-        self.digital_model.new_board()
+        num = len(self.controller.hardware.pulseblasters)
+        self.digital_model.insertRow(num)
 
     def remove_pb_handler(self):
-        item = self.digital_tree.currentItem()
-        if item and not item.parent():
-            index = self.digital_tree.currentIndex().row()
-            del self.controller.hardware.pulseblasters[index]
-            self.digital_tree.redraw()
+        self.digital_model.remove_board(self.digital_tree.currentIndex())
 
     def new_ni_handler(self):
-        ni = NIBoard('Dev' + str(len(self.controller.hardware.ni_boards)))
-        self.controller.hardware.ni_boards.append(ni)
-        self.analog_tree.redraw()
+        num = len(self.controller.hardware.ni_boards)
+        self.analog_model.insertRow(num)
 
     def remove_ni_handler(self):
-        item = self.analog_tree.currentItem()
-        if item and not item.parent():
-            index = self.analog_tree.currentIndex().row()
-            del self.controller.hardware.ni_boards[index]
-            self.analog_tree.redraw()
+        self.analog_model.remove_board(self.analog_tree.currentIndex())
 
     def new_novatech_handler(self):
-        nova = NovatechBoard('COM' + str(len(self.controller.hardware.novatechs)))
-        self.controller.hardware.novatechs.append(nova)
-        self.novatech_tree.redraw()
+        num = len(self.controller.hardware.novatechs)
+        self.novatech_model.insertRow(num)
 
     def remove_novatech_handler(self):
-        item = self.novatech_tree.currentItem()
-        if item and not item.parent():
-            index = self.novatech_tree.currentIndex().row()
-            del self.controller.hardware.novatechs[index]
-            self.novatech_tree.redraw()
+        self.novatech_model.remove_board(self.novatech_tree.currentIndex())
 
     def redraw_hardware(self):
-        self.digital_tree.redraw()
-        self.analog_tree.redraw()
-        self.novatech_tree.redraw()
+        self.digital_model.modelReset.emit()
+        self.analog_model.modelReset.emit()
+        self.novatech_model.modelReset.emit()
         self.analog_table.redraw_cols()
         self.novatech_table.redraw_cols()
         self.digital_table.redraw_cols()
@@ -368,7 +323,7 @@ class Main(QMainWindow, Ui_MainWindow):
     def load_hardware(self):
         fp = QFileDialog.getOpenFileName(self, 'Open...', os.path.join(ROOT_PATH, 'hardware_presets'), "Text files (*.txt)")[0]
         if fp:
-            self.controller.hardware.load_hardware_file(fp)
+            self.controller.hardware.load_hardware_file(fp, self.controller)
             self.controller.default_setup = DefaultSetup(self.controller.hardware)
             self.redraw_hardware()
             self.plotter.update_channels()

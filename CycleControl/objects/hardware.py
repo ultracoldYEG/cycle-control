@@ -7,7 +7,7 @@ class HardwareSetup(object):
         self.ni_boards = kwargs.get('ni_boards', [])
         self.novatechs = kwargs.get('novatechs', [])
 
-    def load_hardware_file(self, fp):
+    def load_hardware_file(self, fp, controller):
         self.pulseblasters = []
         self.ni_boards = []
         self.novatechs = []
@@ -16,15 +16,16 @@ class HardwareSetup(object):
             context = json.load(f)
 
         for board in context.get('pulseblasters'):
-            pb = PulseBlasterBoard(board.get('id'))
+            pb = PulseBlasterBoard(board.get('id'), controller)
             pb.analog_pin = board.get('analog_pin')
             pb.novatech_pin = board.get('novatech_pin')
             for i, channel in enumerate(board.get('channels')):
+                pb[i].label = channel.get('label')
                 pb[i].enabled = channel.get('enabled')
             self.pulseblasters.append(pb)
 
         for board in context.get('ni_boards'):
-            ni_board = NIBoard(board.get('id'))
+            ni_board = NIBoard(board.get('id'), controller)
             for i, channel in enumerate(board.get('channels')):
                 ni_board[i].enabled = channel.get('enabled')
                 ni_board[i].label = channel.get('label')
@@ -34,8 +35,9 @@ class HardwareSetup(object):
             self.ni_boards.append(ni_board)
 
         for board in context.get('novatechs'):
-            novatech = NovatechBoard(board.get('id'))
+            novatech = NovatechBoard(board.get('id'), controller)
             for i, channel in enumerate(board.get('channels')):
+                novatech[i].label = channel.get('label')
                 novatech[i].enabled = channel.get('enabled')
             self.novatechs.append(novatech)
 
@@ -53,7 +55,7 @@ class HardwareSetup(object):
             serialized_board = self.serialize_board(
                 board,
                 board_params = ['id', 'analog_pin', 'novatech_pin'],
-                channel_params = ['enabled']
+                channel_params = ['enabled', 'label']
             )
             pulseblasters.append(serialized_board)
 
@@ -71,7 +73,7 @@ class HardwareSetup(object):
             serialized_board = self.serialize_board(
                 board,
                 board_params = ['id'],
-                channel_params = ['enabled']
+                channel_params = ['enabled', 'label']
             )
             novatechs.append(serialized_board)
 
@@ -116,7 +118,6 @@ class PulseBlasterBoard(Board):
         self.novatech_pin = None
         self.channels = [PulseBlasterChannel(self) for x in range(self.CHANNEL_NUM)]
 
-
     @property
     def row(self):
         return self.parent.hardware.pulseblasters.index(self)
@@ -132,6 +133,9 @@ class NIBoard(Board):
         super(NIBoard, self).__init__(id, controller)
         self.channels = [VirtualNIChannel(self) for x in range(self.CHANNEL_NUM)]
 
+    @property
+    def row(self):
+        return self.parent.hardware.ni_boards.index(self)
 
 class VirtualNIChannel(Channel):
     def __init__(self, parent):
@@ -151,6 +155,10 @@ class NovatechBoard(Board):
     def num_active(self):
         result = super(NovatechBoard, self).num_active()
         return result * 3
+
+    @property
+    def row(self):
+        return self.parent.hardware.novatechs.index(self)
 
 class NovatechChannel(Channel):
     def __init__(self, parent):

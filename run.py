@@ -6,10 +6,6 @@ if __name__ == '__main__':
     app1 = QApplication(sys.argv)
     controller = Controller()
 
-    pb = PulseBlasterBoard('0', controller)
-
-    controller.hardware.pulseblasters.append(pb)
-
     main = Main(controller)
     main.show()
     app1.exec_()
