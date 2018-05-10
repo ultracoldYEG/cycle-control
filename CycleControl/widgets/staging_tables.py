@@ -30,6 +30,17 @@ class HardwareTable(QTableWidget):
         pass
 
     def update_inst(self, row, col):
+        item = self.item(row, col)
+        if row < len(self.controller.proc_params.instructions):
+            inst = self.controller.proc_params.instructions[row]
+        else:
+            inst = self.controller.default_setup
+
+        if item:
+            item = item.text()
+            self.populate_inst(row, col, inst, item)
+
+    def populate_inst(self, row, col, inst, item):
         pass
 
     def get_channel_by_col(self, col, boards):
@@ -43,6 +54,14 @@ class HardwareTable(QTableWidget):
         return None, None
 
     def insert_row(self, row):
+        self.insertRow(row)
+        if row < len(self.controller.proc_params.instructions):
+            inst = self.controller.proc_params.instructions[row]
+        else:
+            inst = self.controller.default_setup
+        self.populate_row(row, inst)
+
+    def populate_row(self, row, inst):
         pass
 
     def redraw_row(self, row):
@@ -51,6 +70,7 @@ class HardwareTable(QTableWidget):
 
     def data_menu(self):
         menu = QMenu()
+        row = self.currentRow()
         new_row_pre = menu.addAction("New instruction before")
         new_row_aft = menu.addAction("New instruction after")
         copy_row = menu.addAction("Copy instruction")
@@ -62,8 +82,14 @@ class HardwareTable(QTableWidget):
             paste_row_aft.setEnabled(False)
         if len(self.selectedIndexes()) > 1:
             set_to = menu.addAction("Set cells to...")
+        if  row == self.rowCount() - 1 or row < 0:
+            new_row_aft.setEnabled(False)
+            copy_row.setEnabled(False)
+            paste_row_aft.setEnabled(False)
+            paste_row_aft.setEnabled(False)
+            del_row.setEnabled(False)
         selectedItem = menu.exec_(QCursor.pos())
-        row = self.currentRow()
+
         if selectedItem == new_row_pre:
             self.gui.insert_inst_handler(self.gui.clip_inst_number(row))
         elif selectedItem == new_row_aft:
@@ -112,29 +138,24 @@ class AnalogTable(HardwareTable):
                     self.colors.append(color)
                     n += 1
 
-    def update_inst(self, row, col):
-        item = self.item(row, col)
-        inst = self.controller.proc_params.instructions[row]
+    def populate_inst(self, row, col, inst, item):
+        if col == 0:
+            inst.name = item
+        elif col == 1:
+            inst.duration = item
+        elif col == 2:
+            inst.stepsize = item
+        elif col > 2:
+            board, num = self.get_channel_by_col(col, self.controller.hardware.ni_boards)
+            id = board.id
 
-        if item:
-            item = item.text()
-            if col == 0:
-                inst.name = item
-            elif col == 1:
-                inst.duration = item
-            elif col == 2:
-                inst.stepsize = item
-            elif col > 2:
-                board, num = self.get_channel_by_col(col, self.controller.hardware.ni_boards)
-                id = board.id
-
-                if self.is_valid_input(item, col):
-                    inst.analog_functions.get(id)[num] = str(item)
-                else:
-                    message = 'Bad input at: ('+str(row)+', '+str(col)+').'
-                    dialog = WarningWindow(message)
-                    dialog.exec_()
-                    print message
+            if self.is_valid_input(item, col):
+                inst.analog_functions.get(id)[num] = str(item)
+            else:
+                message = 'Bad input at: ('+str(row)+', '+str(col)+').'
+                dialog = WarningWindow(message)
+                dialog.exec_()
+                print(message)
 
     def is_valid_input(self, item, col):
         board, num = self.get_channel_by_col(col, self.controller.hardware.ni_boards)
@@ -159,9 +180,7 @@ class AnalogTable(HardwareTable):
                     return False
         return True
 
-    def insert_row(self, row):
-        self.insertRow(row)
-        inst = self.controller.proc_params.instructions[row]
+    def populate_row(self, row, inst):
         for col in range((self.columnCount())):
             if col == 0:
                 new_string = inst.name
@@ -212,28 +231,21 @@ class NovatechTable(HardwareTable):
                         self.colors.append(color)
                         n += 1
 
-    def update_inst(self, row, col):
-        item = self.item(row, col)
-        inst = self.controller.proc_params.instructions[row]
+    def populate_inst(self, row, col, inst, item):
+        if col == 0:
+            inst.name = item
+        elif col == 1:
+            inst.duration = item
+        elif col == 2:
+            inst.stepsize = item
+        elif col > 2:
+            col2 = (col - self.fixedColumnNum) / 3 + self.fixedColumnNum
+            rem = (col - self.fixedColumnNum) % 3
+            board, num = self.get_channel_by_col(col2, self.controller.hardware.novatechs)
+            id = board.id
+            inst.novatech_functions.get(id)[3*num+rem] = str(item)
 
-        if item:
-            item = item.text()
-            if col == 0:
-                inst.name = item
-            elif col == 1:
-                inst.duration = item
-            elif col == 2:
-                inst.stepsize = item
-            elif col > 2:
-                col2 = (col - self.fixedColumnNum) / 3 + self.fixedColumnNum
-                rem = (col - self.fixedColumnNum) % 3
-                board, num = self.get_channel_by_col(col2, self.controller.hardware.novatechs)
-                id = board.id
-                inst.novatech_functions.get(id)[3*num+rem] = str(item)
-
-    def insert_row(self, row):
-        self.insertRow(row)
-        inst = self.controller.proc_params.instructions[row]
+    def populate_row(self, row, inst):
         for col in range((self.columnCount())):
             if col == 0:
                 new_string = inst.name
@@ -285,22 +297,14 @@ class DigitalTable(HardwareTable):
                     self.colors.append(color)
                     n += 1
 
-    def update_inst(self, row, col):
-        item = self.item(row, col)
-        inst = self.controller.proc_params.instructions[row]
+    def populate_inst(self, row, col, inst, item):
+        if col == 0:
+            inst.name = item
+        elif col == 1:
+            inst.duration = item
+        self.redraw_row(row)
 
-        if item:
-            item = item.text()
-            if col == 0:
-                inst.name = item
-            elif col == 1:
-                inst.duration = item
-            self.redraw_row(row)
-
-    def insert_row(self, row):
-        self.insertRow(row)
-        inst = self.controller.proc_params.instructions[row]
-
+    def populate_row(self, row, inst):
         for col in range(self.columnCount()):
             if col == 0:
                 self.setItem(row, col, QTableWidgetItem(inst.name))
@@ -322,7 +326,10 @@ class DigitalTable(HardwareTable):
                 self.cellWidget(row, col).row = row
 
     def update_digital(self, row, col, state):
-        inst = self.controller.proc_params.instructions[row]
+        if row < len(self.controller.proc_params.instructions):
+            inst = self.controller.proc_params.instructions[row]
+        else:
+            inst = self.controller.default_setup
         board, num = self.get_channel_by_col(col, self.controller.hardware.pulseblasters)
         id = board.id
         digits = inst.digital_pins.get(id)

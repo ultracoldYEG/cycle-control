@@ -63,22 +63,19 @@ class Main(QMainWindow, Ui_MainWindow):
         self.save_hardware_button.clicked.connect(self.save_hardware)
         self.new_hardware_button.clicked.connect(self.new_hardware)
 
+        self.load_default_button.clicked.connect(self.load_default_setup)
+        self.save_default_button.clicked.connect(self.save_default_setup)
+        self.new_default_button.clicked.connect(self.new_default_setup)
+
         self.digital_model = PulseBlastersModel(controller, self)
-        self.digital_tree = QTreeView(self)
         self.digital_tree.setModel(self.digital_model)
 
         self.analog_model = NIBoardsModel(controller, self)
-        self.analog_tree = QTreeView(self)
         self.analog_tree.setItemDelegateForColumn(4, ComboDelegate(self))
         self.analog_tree.setModel(self.analog_model)
 
         self.novatech_model = NovatechsModel(controller, self)
-        self.novatech_tree = QTreeView(self)
         self.novatech_tree.setModel(self.novatech_model)
-
-        self.gridLayout_13.addWidget(self.digital_tree, 0, 0)
-        self.gridLayout_13.addWidget(self.analog_tree, 0, 1)
-        self.gridLayout_13.addWidget(self.novatech_tree, 0, 2)
 
         self.new_pulseblaster_button.clicked.connect(self.new_pb_handler)
         self.remove_pulseblaster_button.clicked.connect(self.remove_pb_handler)
@@ -126,6 +123,8 @@ class Main(QMainWindow, Ui_MainWindow):
         self.persistent_cb.stateChanged.connect(self.highlight_update_globals)
         self.cycle_delay.valueChanged.connect(self.highlight_update_globals)
 
+        self.redraw_all()
+
     def copy_inst_handler(self, loc):
         self.controller.clipboard = copy.deepcopy(self.controller.proc_params.instructions[loc])
 
@@ -169,7 +168,7 @@ class Main(QMainWindow, Ui_MainWindow):
         with self.updating:
             for i in range(self.digital_table.rowCount()):
                 self.remove_inst_row(0)
-            for i in range(len(self.controller.proc_params.instructions)):
+            for i in range(len(self.controller.proc_params.instructions)+1):
                 self.insert_inst_row(i)
 
     def redraw_inst_row(self, row):
@@ -292,12 +291,26 @@ class Main(QMainWindow, Ui_MainWindow):
     def clear_procedure(self):
         self.controller.proc_params = ProcedureParameters()
         self.current_file.setText('Untitled')
+        self.redraw_all()
 
     def new_procedure_handler(self):
         confirmation = ConfirmationWindow('New Procedure')
         confirmation.exec_()
         if not confirmation.cancelled:
             self.clear_procedure()
+
+    def load_procedure_handler(self):
+        fp = QFileDialog.getOpenFileName(self, 'Open...', os.path.join(ROOT_PATH, 'presets'), "Text files (*.txt)")[0]
+        if fp:
+            self.controller.proc_params.load_from_file(fp, self.controller)
+            self.current_file.setText(re.match(r'.*/(.*)$', fp).group(1))
+            self.redraw_all()
+
+    def save_procedure_handler(self):
+        fp = QFileDialog.getSaveFileName(self, 'Save as...', os.path.join(ROOT_PATH, 'presets'), "Text files (*.txt)")[0]
+        if fp:
+            self.controller.proc_params.save_to_file(fp)
+            self.current_file.setText(re.match(r'.*/(.*)$', fp).group(1))
 
     def new_hardware(self):
         confirmation = ConfirmationWindow('New Hardware Setup', msg = 'All unsaved changes to the current procedure will be lost. Continue?')
@@ -307,33 +320,39 @@ class Main(QMainWindow, Ui_MainWindow):
             self.redraw_hardware()
             self.clear_procedure()
 
-    def save_procedure_handler(self):
-        fp = QFileDialog.getSaveFileName(self, 'Save as...', os.path.join(ROOT_PATH, 'presets'), "Text files (*.txt)")[0]
-        if fp:
-            self.controller.proc_params.save_to_file(fp)
-            self.current_file.setText(re.match(r'.*/(.*)$', fp).group(1))
-
-    def load_procedure_handler(self):
-        fp = QFileDialog.getOpenFileName(self, 'Open...', os.path.join(ROOT_PATH, 'presets'), "Text files (*.txt)")[0]
-        if fp:
-            self.controller.proc_params.load_from_file(fp, self.controller)
-            self.current_file.setText(re.match(r'.*/(.*)$', fp).group(1))
-            self.redraw_all()
-
     def load_hardware(self):
         fp = QFileDialog.getOpenFileName(self, 'Open...', os.path.join(ROOT_PATH, 'hardware_presets'), "Text files (*.txt)")[0]
         if fp:
             self.controller.hardware.load_hardware_file(fp, self.controller)
             self.controller.default_setup = DefaultSetup(self.controller.hardware)
-            self.redraw_hardware()
-            self.plotter.update_channels()
             self.controller.programmer.update_task_handles()
             self.clear_procedure()
+            self.plotter.update_channels()
+            self.redraw_hardware()
+            self.redraw_all()
 
     def save_hardware(self):
         fp = QFileDialog.getSaveFileName(self, 'Save as...', os.path.join(ROOT_PATH, 'hardware_presets'), "Text files (*.txt)")[0]
         if fp:
             self.controller.hardware.save_hardware_file(fp)
+
+    def new_default_setup(self):
+        confirmation = ConfirmationWindow('New Default Setup', msg = 'All unsaved changes to the current default setup will be lost. Continue?')
+        confirmation.exec_()
+        if not confirmation.cancelled:
+            self.controller.default_setup = DefaultSetup(self.controller.hardware)
+            self.redraw_all()
+
+    def load_default_setup(self):
+        fp = QFileDialog.getOpenFileName(self, 'Open...', os.path.join(ROOT_PATH, 'default_setups'), "Text files (*.txt)")[0]
+        if fp:
+            self.controller.default_setup.load_from_file(fp)
+            self.redraw_all()
+
+    def save_default_setup(self):
+        fp = QFileDialog.getSaveFileName(self, 'Save as...', os.path.join(ROOT_PATH, 'default_setups'), "Text files (*.txt)")[0]
+        if fp:
+            self.controller.default_setup.save_to_file(fp)
 
 
 class ConfirmationWindow(QDialog):

@@ -9,7 +9,7 @@ class Instruction(object):
         self._stepsize = kwargs.get('stepsize', '0.0')
 
         self.digital_pins = {board.id: '0' * 24 for board in hardware.pulseblasters}
-        self.analog_functions = {board.id: ['0.01'] * 8 for board in hardware.ni_boards}
+        self.analog_functions = {board.id: ['0.0'] * 8 for board in hardware.ni_boards}
         self.novatech_functions = {board.id: ['0'] * 12 for board in hardware.novatechs}
 
     def __eq__(self, other):
@@ -51,6 +51,22 @@ class DefaultSetup(Instruction):
         self._name = 'Default'
         self._duration = '-'
         self._stepsize = '-'
+
+    def save_to_file(self, fp):
+        with open(fp, 'w+') as f:
+            json.dump(OrderedDict([(attr, getattr(self, attr)) for attr in [
+                'digital_pins',
+                'analog_functions',
+                'novatech_functions'
+            ]]), f, indent=2)
+
+    def load_from_file(self, fp):
+        with open(fp, 'rb') as f:
+            context = json.load(f)
+
+        self.digital_pins.update(context.get('digital_pins'))
+        self.analog_functions.update(context.get('analog_functions'))
+        self.novatech_functions.update(context.get('novatech_functions'))
 
     @property
     def name(self):

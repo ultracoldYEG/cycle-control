@@ -1,5 +1,4 @@
 from PyQt5.QtCore import *
-from PyQt5.QtGui import *
 from PyQt5.QtWidgets import QItemDelegate, QComboBox
 
 from CycleControl.objects.cycle_controller import *
@@ -16,7 +15,6 @@ class BoardsModel(QAbstractItemModel):
         return self.controller.hardware.pulseblasters
 
     def refresh(self):
-        print self.rowCount()
         self.dataChanged.emit(self.index(0, 0), self.index(self.rowCount(), self.columnCount()))
 
     def rowCount(self, parent = None, *args, **kwargs):

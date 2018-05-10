@@ -461,6 +461,15 @@ QPushButton:pressed {background-color: rgb(170, 190, 255)}</string>
                    </property>
                   </widget>
                  </item>
+                 <item row="0" column="1">
+                  <widget class="QTreeView" name="analog_tree"/>
+                 </item>
+                 <item row="0" column="0">
+                  <widget class="QTreeView" name="digital_tree"/>
+                 </item>
+                 <item row="0" column="2">
+                  <widget class="QTreeView" name="novatech_tree"/>
+                 </item>
                 </layout>
                </item>
               </layout>

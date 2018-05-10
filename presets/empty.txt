@@ -1,0 +1,27 @@
+{
+  "sequencing_parameters": {
+    "steps": 1, 
+    "persistent": false, 
+    "delay": 0.0
+  }, 
+  "dynamic_variables": [], 
+  "static_variables": [], 
+  "instructions": [
+    {
+      "name": "Instruction1", 
+      "duration": "0.0", 
+      "stepsize": "0.0", 
+      "digital_pins": {}, 
+      "analog_functions": {}, 
+      "novatech_functions": {}
+    }, 
+    {
+      "name": "Instruction2", 
+      "duration": "0.0", 
+      "stepsize": "0.0", 
+      "digital_pins": {}, 
+      "analog_functions": {}, 
+      "novatech_functions": {}
+    }
+  ]
+}
