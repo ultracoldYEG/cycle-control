@@ -10,9 +10,9 @@ import time
 from CycleControl.helpers import *
 
 class Programmer(object):
-    def __init__(self, gui):
+    def __init__(self, controller):
         #setUp NI board
-        self.gui = gui
+        self.controller = controller
         self.taskHandles = {}
 
         # Set up pulse blaster
@@ -37,7 +37,7 @@ class Programmer(object):
         self.clear_all_task_handles()
         self.taskHandles = {}
 
-        for board in self.gui.hardware.ni_boards:
+        for board in self.controller.hardware.ni_boards:
             task = TaskHandle(0)
             DAQmxCreateTask("", task)
             for i, channel in enumerate(board.channels):
@@ -94,7 +94,7 @@ class Programmer(object):
             pb_stop_programming()
 
     def program_NI(self):
-        for board in self.gui.hardware.ni_boards:
+        for board in self.controller.hardware.ni_boards:
             id = board.id
             analog_board_data = self.cycle.analog_data.get(id)
             task = self.taskHandles.get(id)
@@ -116,7 +116,6 @@ class Programmer(object):
                 out += self.get_novatech_out(sample, sample + 1, vals)
             out += self.get_novatech_out(sample, sample + 2, vals, state='00')
             if self.novatech_tables.get(board, None) == out:
-                print 'novatech {0} skipped'.format(board)
                 continue
             # with serial.Serial(board, baudrate=19200, timeout=20.0) as nova_device:
             #     nova_device.write('M 0\n'.encode('utf-8'))  # entering table writing mode
@@ -149,4 +148,41 @@ class Programmer(object):
     def stop_device_handler(self):
         self.stop_all_task_handles()
         pb_stop()
-        # TODO set default values here
+
+    def apply_default_setup(self):
+        for board, board_data in self.controller.default_setup.digital_pins.iteritems():
+            pb_select_board(int(board))
+            pb_start_programming(PULSE_PROGRAM)
+            start = pb_inst_pbonly(int(board_data[0][::-1], 2), Inst.CONTINUE, None,  1000 * ms)
+            pb_inst_pbonly(int(board_data[0][::-1], 2), Inst.BRANCH, start, 1000 * ms)
+            pb_stop_programming()
+
+        for board in self.controller.hardware.ni_boards:
+            id = board.id
+            analog_board_data = self.controller.default_setup.analog_functions.get(id)
+            task = self.taskHandles.get(id)
+            data = []
+            num_samples = 1
+
+            for i, channel in enumerate(board.channels):
+                if channel.enabled:
+                    data.append(float(analog_board_data[i]))
+
+            data = np.array(data, dtype=np.float64)
+            DAQmxCfgSampClkTiming(task, "/"+board.id + "/PFI0", 10000.0, DAQmx_Val_Rising, DAQmx_Val_FiniteSamps, num_samples)
+            DAQmxWriteAnalogF64(task, num_samples, 0, 10.0, DAQmx_Val_GroupByChannel, data, None, None)
+
+        for board in self.controller.hardware.novatechs:
+            id = board.id
+            data = self.controller.default_setup.novatech_functions.get(id) # List len 12
+            with serial.Serial(id, baudrate=19200, timeout=20.0) as nova_device:
+                for i, channel in enumerate(board.channels):
+                    if channel.enabled:
+
+                        amp =  'V{} {}\n'.format(i, int(data[3 * i + 0]))
+                        freq = 'F{} {:<011f}\n'.format(i, float(data[3 * i + 1]))
+                        phase = 'P{} {}\n'.format(i, int(data[3 * i + 2]))
+
+                        nova_device.write(amp.encode('utf-8'))
+                        nova_device.write(freq.encode('utf-8'))
+                        nova_device.write(phase.encode('utf-8'))

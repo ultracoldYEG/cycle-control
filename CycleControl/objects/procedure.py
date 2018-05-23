@@ -33,6 +33,8 @@ class Procedure(object):
                 time.sleep(self.parameters.delay)
                 self.current_step += 1
                 self.cycle_number += 1
+            self.programmer.apply_default_setup()
+
 
     def run_cycle(self, cycle, gui = None):
         thread = cycle_thread(self.programmer, cycle)

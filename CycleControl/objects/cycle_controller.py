@@ -11,7 +11,3 @@ class Controller(object):
         self.proc_params = ProcedureParameters(**kwargs)
 
         self.clipboard = None
-
-    @property
-    def instructions(self):
-        return self.proc_params.instructions + [self.default_setup]
