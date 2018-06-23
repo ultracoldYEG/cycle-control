@@ -52,7 +52,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "MOT", 
@@ -99,7 +100,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "molasses", 
@@ -146,10 +148,11 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "wait"
     }, 
     {
-      "name": "opt pump", 
+      "name": "optpump", 
       "duration": "600e-6", 
       "stepsize": "0.001", 
       "digital_pins": {
@@ -193,7 +196,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "MT1", 
@@ -240,7 +244,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "MT1", 
@@ -287,7 +292,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "compression", 
@@ -334,7 +340,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "RF1", 
@@ -381,7 +388,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "RF2", 
@@ -428,7 +436,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "RF3", 
@@ -475,7 +484,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "RF4", 
@@ -522,7 +532,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "decompression", 
@@ -569,7 +580,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "odt1", 
@@ -616,7 +628,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "odt1", 
@@ -663,7 +676,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "TOF", 
@@ -710,7 +724,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "TOF", 
@@ -757,7 +772,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "trigger1", 
@@ -804,10 +820,11 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
-      "name": "trigger1 hold", 
+      "name": "trigger1hold", 
       "duration": "50e-6", 
       "stepsize": "0", 
       "digital_pins": {
@@ -851,10 +868,11 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
-      "name": "trigger pause", 
+      "name": "triggerpause", 
       "duration": "80e-3", 
       "stepsize": "0", 
       "digital_pins": {
@@ -898,10 +916,11 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
-      "name": "probe shutter 2", 
+      "name": "probeshutter2", 
       "duration": "3e-3", 
       "stepsize": "0", 
       "digital_pins": {
@@ -945,7 +964,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "trigger2", 
@@ -992,10 +1012,11 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
-      "name": "trigger2 hold", 
+      "name": "trigger2hold", 
       "duration": "50e-6", 
       "stepsize": "0", 
       "digital_pins": {
@@ -1039,10 +1060,11 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
-      "name": "trigger pause", 
+      "name": "triggerpause", 
       "duration": "80e-3", 
       "stepsize": "0", 
       "digital_pins": {
@@ -1086,10 +1108,11 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
-      "name": "probe shutter 3", 
+      "name": "probeshutter3", 
       "duration": "3e-3", 
       "stepsize": "0", 
       "digital_pins": {
@@ -1133,7 +1156,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "trigger3", 
@@ -1180,10 +1204,11 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
-      "name": "trigger3 pause", 
+      "name": "trigger3pause", 
       "duration": "50e-3", 
       "stepsize": "0", 
       "digital_pins": {
@@ -1227,7 +1252,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }, 
     {
       "name": "end", 
@@ -1274,7 +1300,8 @@
           "0", 
           "0"
         ]
-      }
+      }, 
+      "timing_type_key": "continue"
     }
   ]
 }

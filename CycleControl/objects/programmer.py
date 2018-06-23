@@ -3,6 +3,7 @@
 
 from CycleControl.mock_spinapi import *
 from CycleControl.mock_PyDAQmx import *
+from CycleControl.objects.instruction import *
 
 import numpy as np
 import serial
@@ -80,18 +81,29 @@ class Programmer(object):
 
     def program_pulse_blaster(self):
         domain = self.cycle.digital_domain
+        timing_flags = self.cycle.timing_flags
 
-        for board, board_data in self.cycle.digital_data.iteritems():
-            pb_select_board(int(board))
+        for board in self.controller.hardware.pulseblasters:
+            board_data = self.cycle.digital_data.get(board.id)
+            pb_select_board(int(board.id))
             pb_start_programming(PULSE_PROGRAM)
-            start = pb_inst_pbonly(int(board_data[0][::-1], 2), Inst.CONTINUE, None, (domain[1] - domain[0]) * 1000 * ms)
+            timing_flag = self.convert_timing_flag(timing_flags[0])
+            start = pb_inst_pbonly(int(board_data[0][::-1], 2), timing_flag, None, (domain[1] - domain[0]) * 1000 * ms)
             for i in range(1, len(domain)-2):
                 pin_flag = int(board_data[i][::-1], 2)
+                timing_flag = self.convert_timing_flag(timing_flags[i])
                 stepsize = (domain[i+1] - domain[i]) * 1000 * ms
-                pb_inst_pbonly(pin_flag, Inst.CONTINUE, None, stepsize)
-
+                pb_inst_pbonly(pin_flag, timing_flag, None, stepsize)
             pb_inst_pbonly(int(board_data[-2][::-1], 2), Inst.BRANCH, start, (domain[-1] - domain[-2]) * 1000 * ms)
             pb_stop_programming()
+
+    def convert_timing_flag(self, timing_flag):
+        if timing_flag is ContinueTimingType:
+            return Inst.CONTINUE
+        elif timing_flag is WaitTimingType:
+            return Inst.WAIT
+        else:
+            raise TypeError('Invalid timing flag type')
 
     def program_NI(self):
         for board in self.controller.hardware.ni_boards:
@@ -150,6 +162,7 @@ class Programmer(object):
         pb_stop()
 
     def apply_default_setup(self):
+        print 'applying default setup'
         for board, board_data in self.controller.default_setup.digital_pins.iteritems():
             pb_select_board(int(board))
             pb_start_programming(PULSE_PROGRAM)
@@ -175,14 +188,14 @@ class Programmer(object):
         for board in self.controller.hardware.novatechs:
             id = board.id
             data = self.controller.default_setup.novatech_functions.get(id) # List len 12
-            with serial.Serial(id, baudrate=19200, timeout=20.0) as nova_device:
-                for i, channel in enumerate(board.channels):
-                    if channel.enabled:
-
-                        amp =  'V{} {}\n'.format(i, int(data[3 * i + 0]))
-                        freq = 'F{} {:<011f}\n'.format(i, float(data[3 * i + 1]))
-                        phase = 'P{} {}\n'.format(i, int(data[3 * i + 2]))
-
-                        nova_device.write(amp.encode('utf-8'))
-                        nova_device.write(freq.encode('utf-8'))
-                        nova_device.write(phase.encode('utf-8'))
+            # with serial.Serial(id, baudrate=19200, timeout=20.0) as nova_device:
+            #     for i, channel in enumerate(board.channels):
+            #         if channel.enabled:
+            #
+            #             amp =  'V{} {}\n'.format(i, int(data[3 * i + 0]))
+            #             freq = 'F{} {:<011f}\n'.format(i, float(data[3 * i + 1]))
+            #             phase = 'P{} {}\n'.format(i, int(data[3 * i + 2]))
+            #
+            #             nova_device.write(amp.encode('utf-8'))
+            #             nova_device.write(freq.encode('utf-8'))
+            #             nova_device.write(phase.encode('utf-8'))

@@ -326,9 +326,9 @@ class Main(QMainWindow, Ui_MainWindow):
             self.controller.hardware.load_hardware_file(fp, self.controller)
             self.controller.default_setup = DefaultSetup(self.controller.hardware)
             self.controller.programmer.update_task_handles()
+            self.redraw_hardware()
             self.clear_procedure()
             self.plotter.update_channels()
-            self.redraw_hardware()
             self.redraw_all()
 
     def save_hardware(self):

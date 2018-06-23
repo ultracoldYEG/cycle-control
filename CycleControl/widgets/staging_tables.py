@@ -3,6 +3,7 @@ from PyQt5.QtGui import QColor, QCursor
 from PyQt5 import QtCore
 
 from CycleControl.helpers import *
+from CycleControl.objects.instruction import *
 
 class HardwareTable(QTableWidget):
     def __init__(self, controller, gui):
@@ -120,15 +121,17 @@ class AnalogTable(HardwareTable):
     def __init__(self, controller, gui):
         super(AnalogTable, self).__init__(controller, gui)
         self.insertColumn(2)
+        self.insertColumn(3)
         self.setHorizontalHeaderItem(2, QTableWidgetItem('Stepsize'))
-        self.fixedColumnNum = 3
-        self.colors = [QColor(255,255,255), QColor(255,255,255), QColor(255,255,255)]
+        self.setHorizontalHeaderItem(3, QTableWidgetItem('Continue'))
+        self.fixedColumnNum = 4
+        self.colors = [QColor(255,255,255), QColor(255,255,255), QColor(255,255,255), QColor(255, 255, 255)]
 
     def redraw_cols(self):
         self.clear_all()
         n = self.fixedColumnNum
         colors = [QColor(200,200,255), QColor(255,200,200)]
-        self.colors = [QColor(255,255,255), QColor(255,255,255), QColor(255,255,255)]
+        self.colors = [QColor(255,255,255), QColor(255,255,255), QColor(255,255,255), QColor(255, 255, 255)]
         for i, board in enumerate(self.controller.hardware.ni_boards):
             color = colors[i % 2]
             for channel in board.channels:
@@ -145,7 +148,9 @@ class AnalogTable(HardwareTable):
             inst.duration = item
         elif col == 2:
             inst.stepsize = item
-        elif col > 2:
+        elif col == 3:
+            inst.timing_type = item
+        elif col > self.fixedColumnNum - 1:
             board, num = self.get_channel_by_col(col, self.controller.hardware.ni_boards)
             id = board.id
 
@@ -188,7 +193,11 @@ class AnalogTable(HardwareTable):
                 new_string = str(inst.duration)
             elif col == 2:
                 new_string = str(inst.stepsize)
-            else:
+            elif col == 3:
+                self.setCellWidget(row, col, TimingComboBox(self, row, col, inst))
+                self.setRowHeight(row, 25)
+                continue
+            elif col > self.fixedColumnNum - 1:
                 board, num = self.get_channel_by_col(col, self.controller.hardware.ni_boards)
                 id = board.id
                 new_string = inst.analog_functions.get(id)[num]
@@ -212,15 +221,17 @@ class NovatechTable(HardwareTable):
     def __init__(self, controller, gui):
         super(NovatechTable, self).__init__(controller, gui)
         self.insertColumn(2)
+        self.insertColumn(3)
         self.setHorizontalHeaderItem(2, QTableWidgetItem('Stepsize'))
-        self.fixedColumnNum = 3
-        self.colors = [QColor(255,255,255), QColor(255,255,255), QColor(255,255,255)]
+        self.setHorizontalHeaderItem(3, QTableWidgetItem('Continue'))
+        self.fixedColumnNum = 4
+        self.colors = [QColor(255,255,255), QColor(255,255,255), QColor(255,255,255), QColor(255, 255, 255)]
 
     def redraw_cols(self):
         self.clear_all()
         n = self.fixedColumnNum
         colors = [QColor(200,200,255), QColor(255,200,200), QColor(200,255,200), QColor(200,200,200)]
-        self.colors = [QColor(255,255,255), QColor(255,255,255), QColor(255,255,255)]
+        self.colors = [QColor(255,255,255), QColor(255,255,255), QColor(255,255,255), QColor(255, 255, 255)]
         for i, board in enumerate(self.controller.hardware.novatechs):
             for j, channel in enumerate(board.channels):
                 color = colors[j % 4]
@@ -238,7 +249,9 @@ class NovatechTable(HardwareTable):
             inst.duration = item
         elif col == 2:
             inst.stepsize = item
-        elif col > 2:
+        elif col == 3:
+            inst.timing_type = item
+        elif col > self.fixedColumnNum - 1:
             col2 = (col - self.fixedColumnNum) / 3 + self.fixedColumnNum
             rem = (col - self.fixedColumnNum) % 3
             board, num = self.get_channel_by_col(col2, self.controller.hardware.novatechs)
@@ -253,7 +266,11 @@ class NovatechTable(HardwareTable):
                 new_string = str(inst.duration)
             elif col == 2:
                 new_string = str(inst.stepsize)
-            else:
+            elif col == 3:
+                self.setCellWidget(row, col, TimingComboBox(self, row, col, inst))
+                self.setRowHeight(row, 25)
+                continue
+            elif col > self.fixedColumnNum - 1:
                 col2 = (col - self.fixedColumnNum) / 3 + self.fixedColumnNum
                 rem = (col - self.fixedColumnNum) % 3
                 board, num = self.get_channel_by_col(col2, self.controller.hardware.novatechs)
@@ -278,13 +295,16 @@ class NovatechTable(HardwareTable):
 class DigitalTable(HardwareTable):
     def __init__(self, controller, gui):
         super(DigitalTable, self).__init__(controller, gui)
-        self.colors = [QColor(255,255,255), QColor(255,255,255)]
+        self.insertColumn(2)
+        self.setHorizontalHeaderItem(2, QTableWidgetItem('Continue'))
+        self.fixedColumnNum = 3
+        self.colors = [QColor(255,255,255), QColor(255,255,255), QColor(255,255,255)]
 
     def redraw_cols(self):
         self.clear_all()
         n = self.fixedColumnNum
         colors = [QColor(200,200,255), QColor(255,200,200)]
-        self.colors = [QColor(255,255,255), QColor(255,255,255)]
+        self.colors = [QColor(255,255,255), QColor(255,255,255), QColor(255,255,255)]
         header = self.horizontalHeader()
         for i, board in enumerate(self.controller.hardware.pulseblasters):
             color = colors[i % 2]
@@ -302,17 +322,19 @@ class DigitalTable(HardwareTable):
             inst.name = item
         elif col == 1:
             inst.duration = item
+        elif col == 2:
+            inst.timing_type = item
         self.redraw_row(row)
 
     def populate_row(self, row, inst):
         for col in range(self.columnCount()):
             if col == 0:
                 self.setItem(row, col, QTableWidgetItem(inst.name))
-
             elif col == 1:
                 self.setItem(row, col, QTableWidgetItem(str(inst.duration)))
-
-            else:
+            elif col == 2:
+                self.setCellWidget(row, col, TimingComboBox(self, row, col, inst))
+            elif col > self.fixedColumnNum - 1:
                 board, num = self.get_channel_by_col(col, self.controller.hardware.pulseblasters)
                 id = board.id
                 state = bool(int(inst.digital_pins.get(id)[num]))
@@ -374,6 +396,42 @@ class TableCheckBox(QWidget):
 
     def update_instruction(self):
         self.table.update_digital(self.row, self.col, self.cb.isChecked())
+
+
+
+class TimingComboBox(QWidget):
+    def __init__(self, table, row, col, inst):
+        QWidget.__init__(self)
+        self.table = table
+        self.inst = inst
+        self.row = row
+        self.col = col
+        layout = QHBoxLayout(self)
+        layout.setAlignment(QtCore.Qt.AlignCenter)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        if isinstance(inst, DefaultSetup):
+            layout.addWidget(QLabel('-'))
+            return
+
+        self.combo = QComboBox()
+        self.combo.addItems([type.label for type in timing_type_enum])
+        # TODO also make sure default setup only has numerical inputs
+        self.combo.installEventFilter(self)
+
+        self.combo.setCurrentText(inst.timing_type.label)
+        self.combo.currentTextChanged.connect(self.update_instruction)
+        layout.addWidget(self.combo)
+
+
+    def update_instruction(self):
+        self.table.populate_inst(self.row, self.col, self.inst, self.combo.currentText())
+        self.table.cell_changed_handler(self.row, self.col)
+
+    def eventFilter(self, obj, event):
+        if event.type() == QtCore.QEvent.Wheel:
+            return True
+        return False
 
 
 class SetToWindow(QDialog):

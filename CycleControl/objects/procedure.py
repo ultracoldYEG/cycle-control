@@ -78,7 +78,8 @@ class ProcedureParameters(object):
                 'stepsize',
                 'digital_pins',
                 'analog_functions',
-                'novatech_functions'
+                'novatech_functions',
+                'timing_type_key'
             ]] ))
 
         dynamic_variables = []
@@ -132,6 +133,7 @@ class ProcedureParameters(object):
             i.digital_pins.update(inst.get('digital_pins'))
             i.analog_functions.update(inst.get('analog_functions'))
             i.novatech_functions.update(inst.get('novatech_functions'))
+            i.timing_type = inst.get('timing_type_key')
             self.instructions.append(i)
 
         for var in context.get('dynamic_variables'):
@@ -185,7 +187,6 @@ class ProcedureParameters(object):
     def get_total_time(self):
         vars = self.get_default_variables()
         return sum([parse_arg(x.duration, vars) for x in self.instructions])
-
 
 
 class cycle_thread(Thread):

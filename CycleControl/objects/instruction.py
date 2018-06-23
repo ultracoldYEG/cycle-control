@@ -2,11 +2,35 @@ from CycleControl.objects.hardware import *
 from CycleControl.helpers import *
 
 
+class TimingType(object):
+    key = '-'
+    label = '-'
+
+
+class ContinueTimingType(TimingType):
+    key = 'continue'
+    label = 'Continue'
+
+
+class WaitTimingType(TimingType):
+    key = 'wait'
+    label = 'Wait'
+
+
+timing_type_enum = [
+    ContinueTimingType,
+    WaitTimingType
+]
+
+
 class Instruction(object):
+    TIMING_TYPES = [ContinueTimingType, WaitTimingType]
+
     def __init__(self, hardware = HardwareSetup(), **kwargs):
         self._name = kwargs.get('name', '')
         self._duration = kwargs.get('duration', '0.0')
         self._stepsize = kwargs.get('stepsize', '0.0')
+        self._timing_type = ContinueTimingType
 
         self.digital_pins = {board.id: '0' * 24 for board in hardware.pulseblasters}
         self.analog_functions = {board.id: ['0.0'] * 8 for board in hardware.ni_boards}
@@ -28,6 +52,14 @@ class Instruction(object):
     def stepsize(self):
         return self._stepsize
 
+    @property
+    def timing_type(self):
+        return self._timing_type
+
+    @property
+    def timing_type_key(self):
+        return self._timing_type.key
+
     @name.setter
     def name(self, name):
         try:
@@ -44,6 +76,12 @@ class Instruction(object):
     def stepsize(self, stepsize):
         self._stepsize = stepsize
 
+    @timing_type.setter
+    def timing_type(self, timing_type_key):
+        for type in self.TIMING_TYPES:
+            if type.key.lower() == timing_type_key.lower():
+                self._timing_type = type
+
 
 class DefaultSetup(Instruction):
     def __init__(self, hardware = HardwareSetup()):
@@ -51,6 +89,7 @@ class DefaultSetup(Instruction):
         self._name = 'Default'
         self._duration = '-'
         self._stepsize = '-'
+        self._timing_type = TimingType
 
     def save_to_file(self, fp):
         with open(fp, 'w+') as f:
@@ -80,6 +119,10 @@ class DefaultSetup(Instruction):
     def stepsize(self):
         return self._stepsize
 
+    @property
+    def timing_type(self):
+        return self._timing_type
+
     @name.setter
     def name(self, name):
         pass
@@ -90,6 +133,10 @@ class DefaultSetup(Instruction):
 
     @stepsize.setter
     def stepsize(self, stepsize):
+        pass
+
+    @timing_type.setter
+    def timing_type(self, timing_type_key):
         pass
 
 

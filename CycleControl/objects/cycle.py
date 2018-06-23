@@ -1,6 +1,10 @@
+from CycleControl.objects.instruction import ContinueTimingType, WaitTimingType
 from CycleControl.user_functions import *
 from CycleControl.helpers import *
 import copy
+
+# from spinapi import *
+from CycleControl.mock_spinapi import *
 
 PULSE_WIDTH = 5e-6
 
@@ -15,6 +19,7 @@ class Cycle(object):
         self.analog_data = {board: [[] for i in vals] for board, vals in self.instructions[0].analog_functions.iteritems()}
         self.novatech_data = {board: [[] for i in vals] for board, vals in self.instructions[0].novatech_functions.iteritems()}
         self.digital_data = {board: [] for board, vals in self.instructions[0].digital_pins.iteritems()}
+        self.timing_flags = []
 
     def create_waveforms(self):
         self.create_analog_waveform()
@@ -57,6 +62,7 @@ class Cycle(object):
 
         iter_pins = iter([copy.copy(inst.digital_pins) for inst in self.instructions])
         iter_domains = [iter(domain), iter(self.analog_domain), iter(self.novatech_domain)]
+        iter_timing_flags = iter([inst.timing_type for inst in self.instructions])
         next = [x.next() for x in iter_domains]
 
         # TODO include option to select which analog/novatech pins are used
@@ -68,14 +74,15 @@ class Cycle(object):
 
             if index == 0:
                 current_pins = iter_pins.next()
-                self.pulse_pins(min(next), current_pins, *ANALOG_PINS + NOVATECH_PINS)
+                current_timing_flag = iter_timing_flags.next()
+                self.pulse_pins(min(next), current_pins, current_timing_flag, *ANALOG_PINS + NOVATECH_PINS)
                 next = [x.next() for x in iter_domains]
 
             elif index == 1:
-                self.pulse_pins(min(next), current_pins, *ANALOG_PINS)
+                self.pulse_pins(min(next), current_pins, ContinueTimingType, *ANALOG_PINS)
                 next[1] = iter_domains[1].next()
             elif index == 2:
-                self.pulse_pins(min(next), current_pins, *NOVATECH_PINS)
+                self.pulse_pins(min(next), current_pins, ContinueTimingType, *NOVATECH_PINS)
                 next[2] = iter_domains[2].next()
 
             if min(next) == domain[-1]:
@@ -84,7 +91,7 @@ class Cycle(object):
                     self.digital_data.get(board).append(data)
                 break
 
-    def pulse_pins(self, domain, all_pins, *pins):
+    def pulse_pins(self, domain, all_pins, timing_flag, *pins):
         for item in pins:
             board = item[0]
             pin = item[1]
@@ -106,6 +113,9 @@ class Cycle(object):
         self.digital_domain.append(domain + PULSE_WIDTH)
         for board, data in all_pins.iteritems():
             self.digital_data.get(board).append(data)
+
+        self.timing_flags.append(timing_flag)
+        self.timing_flags.append(ContinueTimingType)
 
     def create_single_waveform(self, inst, boards):
         functions = self.get_functions(boards)
